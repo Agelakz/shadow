@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X (Twitter) Account Health Checker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h2 { margin-top: 0; color: #1da1f2; }
+        input[type="text"] {
+            width: 90%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #1da1f2;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover { background-color: #1a91da; }
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            text-align: left;
+            display: none; /* Disembunyikan sampai ada hasil */
+            font-size: 14px;
+        }
+        .status-item { margin-bottom: 8px; }
+        .safe { color: #10b981; font-weight: bold; }
+        .ban { color: #ef4444; font-weight: bold; }
+        .loading { color: #6b7280; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>X Health Checker</h2>
+        <p>Pantau visibilitas dan status akunmu</p>
+        
+        <input type="text" id="username" placeholder="Masukkan username (tanpa @)">
+        <button onclick="checkAccount()" id="checkBtn">Cek Status Akun</button>
+
+        <div class="result-box" id="resultBox">
+            </div>
+    </div>
+
+    <script>
+        async function checkAccount() {
+            const usernameInput = document.getElementById('username').value.trim();
+            const resultBox = document.getElementById('resultBox');
+            const checkBtn = document.getElementById('checkBtn');
+
+            // Hapus karakter '@' jika pengguna tidak sengaja memasukkannya
+            const username = usernameInput.replace(/^@/, '');
+
+            if (!username) {
+                alert("Harap masukkan username yang valid!");
+                return;
+            }
+
+            // Tampilkan status loading
+            resultBox.style.display = "block";
+            resultBox.innerHTML = `<div class="loading">⏳ Sedang mengekstrak data untuk @${username}...</div>`;
+            checkBtn.disabled = true;
+
+            try {
+                /* Di dunia nyata, baris di bawah ini akan memanggil server (Backend) buatanmu.
+                  Misalnya:
+                  const response = await fetch(`http://localhost:3000/api/check?user=${username}`);
+                  const data = await response.json();
+                */
+
+                // Simulasikan jeda waktu server mengecek ke X (2 detik)
+                setTimeout(() => {
+                    // Simulasi respon dari backend
+                    const data = {
+                        searchBan: false, 
+                        ghostBan: false,
+                        replyDeboosting: true 
+                    };
+
+                    // Tampilkan hasil
+                    resultBox.innerHTML = `
+                        <h3 style="margin-top:0; border-bottom: 1px solid #ccc; padding-bottom: 8px;">Hasil: @${username}</h3>
+                        <div class="status-item">🔍 <b>Search Ban:</b> ${data.searchBan ? '<span class="ban">Terkena Ban</span>' : '<span class="safe">Aman</span>'}</div>
+                        <div class="status-item">👻 <b>Ghost Ban:</b> ${data.ghostBan ? '<span class="ban">Terkena Ban</span>' : '<span class="safe">Aman</span>'}</div>
+                        <div class="status-item">📉 <b>Reply Deboosting:</b> ${data.replyDeboosting ? '<span class="ban">Terdeteksi</span> (Hindari spam balasan)' : '<span class="safe">Aman</span>'}</div>
+                    `;
+                    checkBtn.disabled = false;
+                }, 2000);
+
+            } catch (error) {
+                resultBox.innerHTML = `<div class="ban">❌ Gagal terhubung ke server.</div>`;
+                checkBtn.disabled = false;
+            }
+        }
+    </script>
+
+</body>
+</html>
