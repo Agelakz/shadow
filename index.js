@@ -1,10 +1,10 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 
 const app = express();
-const PORT = 3000;
 
-// 1. FRONTEND: Mengirimkan tampilan web saat kamu membuka localhost:3000
+// 1. FRONTEND: Tampilan Web
 app.get('/', (req, res) => {
     const htmlContent = `
     <!DOCTYPE html>
@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>X Health Checker</title>
+        <title>X Health Checker (Vercel Version)</title>
         <style>
             body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
             .container { background-color: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
@@ -30,8 +30,8 @@ app.get('/', (req, res) => {
     </head>
     <body>
         <div class="container">
-            <h2>X Health Checker</h2>
-            <p>Pantau visibilitas dan status akun otomatis</p>
+            <h2>X Checker (Vercel)</h2>
+            <p>Pantau status akunmu</p>
             <input type="text" id="username" placeholder="Masukkan username (tanpa @)">
             <button onclick="checkAccount()" id="checkBtn">Cek Status Akun</button>
             <div class="result-box" id="resultBox"></div>
@@ -47,11 +47,10 @@ app.get('/', (req, res) => {
                 if (!username) return alert("Harap masukkan username yang valid!");
 
                 resultBox.style.display = "block";
-                resultBox.innerHTML = '<div class="loading">⏳ Robot sedang memeriksa @' + username + ' ke X... Ini memakan waktu beberapa detik.</div>';
+                resultBox.innerHTML = '<div class="loading">⏳ Server Vercel sedang memeriksa @' + username + '...</div>';
                 checkBtn.disabled = true;
 
                 try {
-                    // Memanggil API internal di bawah
                     const response = await fetch('/api/check?user=' + username);
                     const data = await response.json();
 
@@ -66,7 +65,7 @@ app.get('/', (req, res) => {
                         \`;
                     }
                 } catch (error) {
-                    resultBox.innerHTML = '<div class="ban">❌ Gagal memproses data.</div>';
+                    resultBox.innerHTML = '<div class="ban">❌ Gagal memproses data dari Vercel.</div>';
                 }
                 checkBtn.disabled = false;
             }
@@ -77,29 +76,32 @@ app.get('/', (req, res) => {
     res.send(htmlContent);
 });
 
-// 2. BACKEND API: Robot Puppeteer yang bekerja di belakang layar
+// 2. BACKEND API: Robot Puppeteer dengan pengaturan khusus Vercel
 app.get('/api/check', async (req, res) => {
     const username = req.query.user;
     if (!username) return res.status(400).json({ error: 'Username kosong' });
 
-    console.log(\`Mengecek status untuk @\${username}...\`);
+    let browser = null;
 
     try {
-        const browser = await puppeteer.launch({ 
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        // Konfigurasi khusus agar Puppeteer bisa berjalan di Vercel
+        browser = await puppeteer.launch({
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(),
+            headless: chromium.headless,
+            ignoreHTTPSErrors: true,
         });
-        const page = await browser.newPage();
         
+        const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36');
-        await page.goto(\`https://x.com/\${username}\`, { waitUntil: 'networkidle2' });
+        
+        await page.goto(\`https://x.com/\${username}\`, { waitUntil: 'domcontentloaded', timeout: 15000 });
         
         const pageText = await page.evaluate(() => document.body.innerText);
         
         const isSuspended = pageText.includes('Account suspended');
         const notFound = pageText.includes('This account doesn’t exist');
-
-        await browser.close();
 
         res.json({
             username: username,
@@ -109,12 +111,14 @@ app.get('/api/check', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error Puppeteer:', error);
-        res.status(500).json({ error: 'Gagal menghubungi server X' });
+        console.error('Error Vercel Puppeteer:', error);
+        res.status(500).json({ error: 'Gagal menghubungi server X. Coba lagi.' });
+    } finally {
+        if (browser !== null) {
+            await browser.close();
+        }
     }
 });
 
-// Menjalankan server
-app.listen(PORT, () => {
-    console.log(\`✅ Aplikasi berjalan! Buka http://localhost:\${PORT} di peramban kamu.\`);
-});
+// Wajib untuk Vercel: Mengekspor aplikasi, bukan menjalankan app.listen
+module.exports = app;
