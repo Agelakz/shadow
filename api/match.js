@@ -1,18 +1,50 @@
 export default async function handler(req, res) {
-    // Kita matikan cache sementara untuk tes ini
-    res.setHeader('Cache-Control', 'no-store');
+    // Trik Caching agar terhindar dari Banned API
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
 
     try {
-        // Ini adalah URL sakti temuan Anda!
-        const url = `https://api.sportsrc.org/v2/?type=matches&api_key=2ae30aee0f4854af5cbfcd1d40ab7d83`;
+        let queryDate = req.query.date || new Date().toISOString().split('T')[0];
         
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        // Kita kirim seluruh data mentah ini langsung ke layar Anda
-        res.status(200).json(data);
+        const url = `https://v3.football.api-sports.io/fixtures?date=${queryDate}`;
+        const options = {
+            method: 'GET',
+            headers: { 
+                // MASUKKAN API KEY API-FOOTBALL ANDA DI SINI!
+                'x-apisports-key': '20178b9693c87fccba1b1cbd4cc44830' 
+            }
+        };
 
+        const response = await fetch(url, options);
+        const rawData = await response.json();
+        
+        if (rawData.errors && Object.keys(rawData.errors).length > 0) {
+            return res.status(200).json({ error: Object.values(rawData.errors)[0] });
+        }
+
+        const matchesArray = rawData.response || [];
+
+        const mappedMatches = matchesArray.map((match) => {
+            return {
+                id: match.fixture.id,
+                home: match.teams.home.name,
+                away: match.teams.away.name,
+                homeLogo: match.teams.home.logo,
+                awayLogo: match.teams.away.logo,
+                homeId: match.teams.home.id,
+                awayId: match.teams.away.id,
+                leagueId: match.league.id,
+                season: match.league.season,
+                scoreHome: match.goals.home !== null ? match.goals.home : "-",
+                scoreAway: match.goals.away !== null ? match.goals.away : "-",
+                timestamp: match.fixture.timestamp,
+                statusCode: match.fixture.status.short,
+                statusDesc: match.fixture.status.long,
+                leagueName: match.league.name.toLowerCase()
+            };
+        });
+
+        res.status(200).json({ matches: mappedMatches });
     } catch (error) {
-        res.status(500).json({ error: "Gagal menarik data dari Sportsrc", detail: error.message });
+        res.status(500).json({ error: error.message });
     }
 }
