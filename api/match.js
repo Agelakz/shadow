@@ -1,44 +1,145 @@
-export default async function handler(req, res) {
-    try {
-        const leaguesUrl = 'https://api.sportsrc.org/?data=results&category=leagues';
-        const matchesUrl = 'https://api.sportsrc.org/?data=matches&category=football';
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreshScore - Live Pertandingan</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #2c3e50; }
+        .navbar { background-color: #ffffff; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { color: #27ae60; font-size: 1.5em; font-weight: 800; letter-spacing: -0.5px;}
+        .container { display: flex; max-width: 1100px; margin: 20px auto; gap: 25px; padding: 0 20px; }
+        
+        /* Sidebar Styling */
+        .sidebar { width: 260px; background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: fit-content; max-height: 80vh; overflow-y: auto; }
+        .sidebar h3 { font-size: 0.9em; color: #95a5a6; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; }
+        .sidebar li { padding: 12px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-weight: 500; font-size: 0.9em; transition: all 0.2s ease; }
+        .sidebar li:hover { color: #27ae60; padding-left: 15px; background-color: #f9fbf9; border-radius: 6px; }
+        
+        /* Main Content Styling */
+        .main-content { flex: 1; }
+        .league-group { background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 25px; }
+        .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; display: flex; align-items: center; gap: 10px; font-size: 0.9em; text-transform: uppercase; }
+        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; transition: background 0.2s; }
+        .match-row:hover { background: #fafcfa; }
+        .match-row:last-child { border-bottom: none; }
+        .match-time { width: 60px; font-size: 0.85em; font-weight: 700; color: #7f8c8d; }
+        .match-teams { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .team-line { display: flex; justify-content: space-between; align-items: center; }
+        .team-name { font-weight: 500; font-size: 0.95em;}
+        .team-score { font-size: 1.1em; width: 40px; text-align: right; font-weight: 700; }
+        #loading { text-align: center; color: #7f8c8d; margin-top: 20px; font-style: italic; }
+    </style>
+</head>
+<body>
 
-        // 🚀 SUPER SPEED: Mengambil 2 data sekaligus secara paralel (bersamaan)
-        const [leaguesRes, matchesRes] = await Promise.all([
-            fetch(leaguesUrl),
-            fetch(matchesUrl)
-        ]);
+    <div class="navbar">
+        <h1>FreshScore</h1>
+        <div class="date" id="today-date"></div>
+    </div>
 
-        const leaguesJson = await leaguesRes.json();
-        const matchesJson = await matchesRes.json();
+    <div class="container">
+        <div class="sidebar">
+            <h3>Daftar Liga</h3>
+            <ul id="league-list">
+                <li id="sidebar-loading">Memuat liga...</li>
+            </ul>
+        </div>
 
-        const leaguesData = leaguesJson.success ? leaguesJson.data : [];
-        let matchesData = [];
+        <div class="main-content">
+            <div id="score-container">
+                <div id="loading">Mencari hasil pertandingan...</div>
+            </div>
+        </div>
+    </div>
 
-        if (matchesJson.success && matchesJson.data) {
-            matchesData = matchesJson.data.map(item => {
-                const matchDate = new Date(item.date);
-                const timeString = matchDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    <script>
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        document.getElementById('today-date').innerText = new Date().toLocaleDateString('id-ID', options);
 
-                return {
-                    id: item.id,
-                    home: item.teams?.home?.name || "Tim Kandang",
-                    away: item.teams?.away?.name || "Tim Tandang",
-                    scoreHome: "-", 
-                    scoreAway: "-", 
-                    time: timeString,
-                    leagueId: item.league || item.category || "Lainnya"
-                };
+        let allMatches = [];
+        let allLeagues = [];
+
+        async function fetchAppDaya() {
+            try {
+                const response = await fetch('/api/match');
+                
+                // Mencegah nge-hang: Jika server bermasalah, paksa masuk ke blok Error
+                if (!response.ok) {
+                    throw new Error(`Server Vercel terputus (Status: ${response.status})`);
+                }
+
+                const data = await response.json();
+
+                allLeagues = data.leagues;
+                allMatches = data.matches;
+
+                renderSidebar();
+                renderMatches('ALL', 'SEMUA PERTANDINGAN'); 
+
+            } catch (error) {
+                console.error("Terjadi Error:", error);
+                document.getElementById('sidebar-loading').innerText = 'Gagal memuat';
+                document.getElementById('sidebar-loading').style.color = 'red';
+                document.getElementById('score-container').innerHTML = `<p style="color: red; text-align: center; font-weight: bold; margin-top: 30px;">❌ ${error.message}.<br><span style="font-weight: normal; font-size: 0.9em; color: #7f8c8d;">Silakan refresh (F5) halaman ini.</span></p>`;
+            }
+        }
+
+        function renderSidebar() {
+            const leagueList = document.getElementById('league-list');
+            leagueList.innerHTML = `<li onclick="renderMatches('ALL', 'SEMUA PERTANDINGAN')" style="color: #27ae60; font-weight: bold;">🌍 Tampilkan Semua</li>`;
+            
+            allLeagues.forEach(league => {
+                // Di sini letak ajaibnya! Nama liga sekarang bisa diklik.
+                leagueList.innerHTML += `<li onclick="renderMatches('${league.id}', '${league.name}')">${league.name}</li>`;
             });
         }
 
-        res.status(200).json({
-            leagues: leaguesData,
-            matches: matchesData
-        });
+        function renderMatches(leagueId, leagueName) {
+            const scoreContainer = document.getElementById('score-container');
+            scoreContainer.innerHTML = ''; 
+            
+            let filteredMatches = allMatches;
+            if (leagueId !== 'ALL') {
+                filteredMatches = allMatches.filter(match => match.leagueId === leagueId);
+            }
 
-    } catch (error) {
-        console.error("Terjadi kesalahan backend:", error);
-        res.status(500).json({ error: "Gagal memproses data API sportsrc" });
-    }
-}
+            if (filteredMatches.length === 0) {
+                scoreContainer.innerHTML = `
+                <div class="league-group">
+                    <div class="league-header">${leagueName}</div>
+                    <p style="text-align:center; padding: 20px; color: #7f8c8d;">Belum ada jadwal untuk liga ini hari ini.</p>
+                </div>`;
+                return;
+            }
+
+            let leagueHTML = `<div class="league-group"><div class="league-header">${leagueName}</div>`;
+            
+            filteredMatches.forEach(match => {
+                leagueHTML += `
+                <div class="match-row">
+                    <div class="match-time">${match.time}</div>
+                    <div class="match-teams">
+                        <div class="team-line">
+                            <span class="team-name">${match.home}</span>
+                            <span class="team-score">${match.scoreHome}</span>
+                        </div>
+                        <div class="team-line">
+                            <span class="team-name">${match.away}</span>
+                            <span class="team-score">${match.scoreAway}</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+
+            leagueHTML += `</div>`;
+            scoreContainer.innerHTML = leagueHTML;
+        }
+
+        fetchAppDaya();
+    </script>
+</body>
+</html>
