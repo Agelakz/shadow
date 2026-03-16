@@ -3,127 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>X (Twitter) Account Health Checker</title>
+    <title>Live Score Papan Atas</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f3f4f6;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #1e1e1e; /* Warna gelap agar terlihat elegan */
+            color: white;
+            text-align: center; 
+            padding: 30px; 
         }
-        .container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        .scoreboard-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .match-card {
+            background: #2d2d2d;
+            border-left: 5px solid #00ff88; /* Aksen hijau neon */
+            padding: 20px;
+            border-radius: 8px;
             width: 100%;
             max-width: 400px;
-            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        h2 { margin-top: 0; color: #1da1f2; }
-        input[type="text"] {
-            width: 90%;
-            padding: 12px;
-            margin: 15px 0;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        button {
-            background-color: #1da1f2;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-            transition: background-color 0.3s;
-        }
-        button:hover { background-color: #1a91da; }
-        .result-box {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: #f8f9fa;
-            text-align: left;
-            display: none; /* Disembunyikan sampai ada hasil */
-            font-size: 14px;
-        }
-        .status-item { margin-bottom: 8px; }
-        .safe { color: #10b981; font-weight: bold; }
-        .ban { color: #ef4444; font-weight: bold; }
-        .loading { color: #6b7280; font-style: italic; }
+        .team-name { font-size: 1.2em; font-weight: bold; }
+        .score { font-size: 1.5em; color: #00ff88; font-weight: bold; }
+        .time { font-size: 0.9em; color: #aaa; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>X Health Checker</h2>
-        <p>Pantau visibilitas dan status akunmu</p>
-        
-        <input type="text" id="username" placeholder="Masukkan username (tanpa @)">
-        <button onclick="checkAccount()" id="checkBtn">Cek Status Akun</button>
+    <h1>Pertandingan Hari Ini ⚽</h1>
+    <p>Memuat data dari "API"...</p>
 
-        <div class="result-box" id="resultBox">
-            </div>
-    </div>
+    <div id="scoreboard" class="scoreboard-container"></div>
 
     <script>
-        async function checkAccount() {
-            const usernameInput = document.getElementById('username').value.trim();
-            const resultBox = document.getElementById('resultBox');
-            const checkBtn = document.getElementById('checkBtn');
+        // 1. Kita siapkan tempat untuk menaruh data di HTML
+        const scoreboardDiv = document.getElementById('scoreboard');
 
-            // Hapus karakter '@' jika pengguna tidak sengaja memasukkannya
-            const username = usernameInput.replace(/^@/, '');
+        // 2. Karena kita belum memasukkan API key asli Anda, kita buat simulasi data (Data Dummy)
+        // Ini persis seperti format data yang biasanya dikirimkan oleh API
+        const dummyData = [
+            { homeTeam: "Arsenal", awayTeam: "Chelsea", score: "2 - 1", time: "88'" },
+            { homeTeam: "Real Madrid", awayTeam: "Barcelona", score: "0 - 0", time: "HT" },
+            { homeTeam: "Juventus", awayTeam: "AC Milan", score: "1 - 3", time: "FT" }
+        ];
 
-            if (!username) {
-                alert("Harap masukkan username yang valid!");
-                return;
-            }
-
-            // Tampilkan status loading
-            resultBox.style.display = "block";
-            resultBox.innerHTML = `<div class="loading">⏳ Sedang mengekstrak data untuk @${username}...</div>`;
-            checkBtn.disabled = true;
-
-            try {
-                /* Di dunia nyata, baris di bawah ini akan memanggil server (Backend) buatanmu.
-                  Misalnya:
-                  const response = await fetch(`http://localhost:3000/api/check?user=${username}`);
-                  const data = await response.json();
-                */
-
-                // Simulasikan jeda waktu server mengecek ke X (2 detik)
-                setTimeout(() => {
-                    // Simulasi respon dari backend
-                    const data = {
-                        searchBan: false, 
-                        ghostBan: false,
-                        replyDeboosting: true 
-                    };
-
-                    // Tampilkan hasil
-                    resultBox.innerHTML = `
-                        <h3 style="margin-top:0; border-bottom: 1px solid #ccc; padding-bottom: 8px;">Hasil: @${username}</h3>
-                        <div class="status-item">🔍 <b>Search Ban:</b> ${data.searchBan ? '<span class="ban">Terkena Ban</span>' : '<span class="safe">Aman</span>'}</div>
-                        <div class="status-item">👻 <b>Ghost Ban:</b> ${data.ghostBan ? '<span class="ban">Terkena Ban</span>' : '<span class="safe">Aman</span>'}</div>
-                        <div class="status-item">📉 <b>Reply Deboosting:</b> ${data.replyDeboosting ? '<span class="ban">Terdeteksi</span> (Hindari spam balasan)' : '<span class="safe">Aman</span>'}</div>
-                    `;
-                    checkBtn.disabled = false;
-                }, 2000);
-
-            } catch (error) {
-                resultBox.innerHTML = `<div class="ban">❌ Gagal terhubung ke server.</div>`;
-                checkBtn.disabled = false;
-            }
+        // 3. Fungsi untuk menyusun data menjadi tampilan visual
+        function displayScores(matches) {
+            scoreboardDiv.innerHTML = ''; // Kosongkan papan skor terlebih dahulu
+            
+            matches.forEach(match => {
+                // Membuat kartu pertandingan untuk setiap data
+                const matchHTML = `
+                    <div class="match-card">
+                        <div class="team-name">${match.homeTeam}</div>
+                        <div class="score-container">
+                            <div class="score">${match.score}</div>
+                            <div class="time">${match.time}</div>
+                        </div>
+                        <div class="team-name">${match.awayTeam}</div>
+                    </div>
+                `;
+                // Suntikkan kartu ke dalam HTML
+                scoreboardDiv.innerHTML += matchHTML;
+            });
         }
+
+        // 4. Kita jalankan fungsinya (Seolah-olah baru selesai mengambil data dari API)
+        setTimeout(() => {
+            displayScores(dummyData);
+            document.querySelector('p').innerText = "Data berhasil dimuat!";
+        }, 1500); // Kita beri jeda 1.5 detik agar terasa seperti sedang loading dari internet
+
+        /* Catatan: Nanti jika Anda sudah punya link API dari sportsrc.org, 
+        kodenya akan kita ganti menggunakan perintah fetch() seperti ini:
+        
+        fetch('LINK_API_ANDA')
+            .then(response => response.json())
+            .then(data => displayScores(data));
+        */
     </script>
 
 </body>
