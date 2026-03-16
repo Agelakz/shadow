@@ -3,173 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FreshScore PRO</title>
+    <title>FreshScore - Live Pertandingan</title>
     <style>
-        :root { --primary: #27ae60; --dark: #2c3e50; --bg: #f4f7f6; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--dark); line-height: 1.6; }
-        .navbar { background: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .container { display: flex; max-width: 1100px; margin: 20px auto; gap: 20px; padding: 0 15px; }
-        .sidebar { width: 260px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: fit-content; position: sticky; top: 85px; }
-        .sidebar h3 { font-size: 0.8em; color: #95a5a6; margin-bottom: 15px; text-transform: uppercase; }
-        .sidebar li { padding: 10px; border-bottom: 1px solid #f8f8f8; cursor: pointer; font-size: 0.9em; list-style: none; transition: 0.2s; border-radius: 5px; }
-        .sidebar li:hover { background: #e8f8f5; color: var(--primary); }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #2c3e50; }
+        .navbar { background-color: #ffffff; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { color: #27ae60; font-size: 1.5em; font-weight: 800; letter-spacing: -0.5px;}
+        .container { display: flex; max-width: 1100px; margin: 20px auto; gap: 25px; padding: 0 20px; }
+        .sidebar { width: 260px; background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: fit-content; max-height: 80vh; overflow-y: auto; }
+        .sidebar h3 { font-size: 0.9em; color: #95a5a6; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; }
+        .sidebar li { padding: 12px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-weight: 500; font-size: 0.9em; transition: all 0.2s ease; }
+        .sidebar li:hover { color: #27ae60; padding-left: 15px; background-color: #f9fbf9; border-radius: 6px; }
         .main-content { flex: 1; min-width: 0; }
-        .date-selector { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; }
-        .date-btn { padding: 8px 15px; background: white; border-radius: 20px; cursor: pointer; font-weight: 600; border: 1px solid #ddd; white-space: nowrap; }
-        .date-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .league-group { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; }
-        .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; font-size: 0.85em; }
-        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; cursor: pointer; gap: 15px; }
-        .match-time { min-width: 70px; font-size: 0.75em; font-weight: 700; color: #7f8c8d; text-align: center; }
+        .date-selector { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .date-selector::-webkit-scrollbar { display: none; } 
+        .date-btn { padding: 8px 18px; background: #ffffff; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85em; color: #7f8c8d; border: 1px solid #e0e0e0; transition: 0.3s; white-space: nowrap; }
+        .date-btn:hover { border-color: #27ae60; color: #27ae60; }
+        .date-btn.active { background: #27ae60; color: white; border-color: #27ae60; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2); }
+        .league-group { background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 25px; }
+        .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; display: flex; align-items: center; gap: 10px; font-size: 0.9em; text-transform: uppercase; }
+        
+        /* PERBAIKAN CSS TATA LETAK */
+        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; transition: background 0.2s; gap: 20px; } /* Menambah jarak (gap) antar elemen */
+        .match-row:hover { background: #fafcfa; }
+        .match-row:last-child { border-bottom: none; }
+        
+        .match-time { 
+            min-width: 70px; /* Lebar fleksibel, tidak dikunci di 60px lagi */
+            font-size: 0.85em; 
+            font-weight: 700; 
+            color: #7f8c8d; 
+            display: flex; 
+            flex-direction: column; /* Membuat tanggal dan jam turun ke bawah dengan rapi */
+            line-height: 1.4;
+        }
+        
         .match-teams { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .team-line { display: flex; align-items: center; gap: 10px; }
-        .team-logo { width: 20px; height: 20px; object-fit: contain; }
-        .team-name { font-weight: 500; font-size: 0.95em; flex: 1; }
-        .team-score { font-weight: 800; font-size: 1.1em; width: 30px; text-align: right; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; }
-        .stat-row { margin-bottom: 15px; }
-        .stat-labels { display: flex; justify-content: space-between; font-size: 0.8em; font-weight: bold; margin-bottom: 5px; }
-        .stat-bar-bg { background: #eee; height: 8px; border-radius: 4px; display: flex; overflow: hidden; }
-        .bar-h { background: var(--primary); height: 100%; }
-        .bar-a { background: #e74c3c; height: 100%; }
+        .team-line { display: flex; justify-content: space-between; align-items: center; }
+        .team-name { font-weight: 500; font-size: 0.95em;}
+        .team-score { font-size: 1.1em; width: 40px; text-align: right; font-weight: 700; color: #2c3e50;}
+        #loading { text-align: center; color: #7f8c8d; margin-top: 20px; font-style: italic; }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <h1 style="color:var(--primary); cursor:pointer" onclick="location.reload()">FreshScore</h1>
-        <div id="display-date" style="font-weight:600; font-size:0.9em;"></div>
+        <h1>FreshScore</h1>
+        <div class="date" id="today-date"></div>
     </div>
-
     <div class="container">
         <div class="sidebar">
-            <h3>Daftar Liga</h3>
-            <ul id="league-list"><li>Memuat...</li></ul>
+            <h3>Liga Hari Ini</h3>
+            <ul id="league-list">
+                <li id="sidebar-loading">Memuat...</li>
+            </ul>
         </div>
         <div class="main-content">
             <div class="date-selector" id="date-selector"></div>
-            <div id="score-container">Memuat pertandingan...</div>
-        </div>
-    </div>
-
-    <div id="statsModal" class="modal" onclick="closeModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 id="modalTitle" style="text-align:center; margin-bottom:20px;">Statistik</h3>
-            <div id="statsBody"></div>
-            <button onclick="closeModal()" style="width:100%; margin-top:20px; padding:10px; border:none; border-radius:5px; background:var(--dark); color:white; cursor:pointer;">Tutup</button>
+            <div id="score-container">
+                <div id="loading">Memuat jadwal dari RapidAPI...</div>
+            </div>
         </div>
     </div>
 
     <script>
-        let allMatches = [];
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        document.getElementById('today-date').innerText = new Date().toLocaleDateString('id-ID', options);
 
-        function init() {
-            const selector = document.getElementById('date-selector');
-            for(let i = -1; i < 5; i++) {
-                let d = new Date(); d.setDate(d.getDate() + i);
-                let iso = d.toISOString().split('T')[0];
-                let btn = document.createElement('div');
-                btn.className = `date-btn ${i===0?'active':''}`;
-                btn.innerText = i===0 ? "HARI INI" : d.toLocaleDateString('id-ID',{day:'numeric', month:'short'});
+        let allMatches = [];
+        let allLeagues = [];
+        let currentLeagueId = 'ALL';
+        let currentLeagueName = 'SEMUA PERTANDINGAN';
+        let currentDateString = ''; 
+
+        function generateDateSelector() {
+            const container = document.getElementById('date-selector');
+            container.innerHTML = '';
+            const today = new Date();
+
+            for(let i = -1; i < 6; i++) { 
+                let d = new Date(today);
+                d.setDate(today.getDate() + i);
+                
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const dateStr = `${yyyy}-${mm}-${dd}`;
+                
+                let displayDay = d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+                if (i === 0) displayDay = "HARI INI";
+                if (i === -1) displayDay = "KEMARIN";
+
+                if (i === 0) currentDateString = dateStr;
+
+                const btn = document.createElement('div');
+                btn.className = `date-btn ${i === 0 ? 'active' : ''}`;
+                btn.innerText = displayDay;
+                
                 btn.onclick = () => {
                     document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    loadData(iso);
+                    currentDateString = dateStr;
+                    currentLeagueId = 'ALL'; 
+                    currentLeagueName = 'SEMUA PERTANDINGAN';
+                    fetchAppDaya(dateStr); 
                 };
-                selector.appendChild(btn);
+                container.appendChild(btn);
             }
-            loadData(new Date().toISOString().split('T')[0]);
         }
 
-        async function loadData(date) {
-            document.getElementById('score-container').innerHTML = "Memuat pertandingan...";
-            try {
-                const res = await fetch(`/api/match?date=${date}`);
-                const data = await res.json();
-                allMatches = data.matches;
-                renderMatches(data.matches);
-                renderSidebar(data.leagues);
-            } catch (e) { document.getElementById('score-container').innerHTML = "Gagal mengambil data."; }
-        }
-
-        function renderMatches(matches) {
-            const container = document.getElementById('score-container');
-            if(!matches.length) { container.innerHTML = "<p style='text-align:center; padding:20px;'>Tidak ada jadwal hari ini.</p>"; return; }
+        async function fetchAppDaya(dateStr) {
+            document.getElementById('score-container').innerHTML = '<div id="loading">Memuat data bola...</div>';
             
-            const grouped = matches.reduce((acc, m) => {
-                if(!acc[m.leagueName]) acc[m.leagueName] = [];
-                acc[m.leagueName].push(m);
-                return acc;
-            }, {});
+            try {
+                const response = await fetch(`/api/match?date=${dateStr}`);
+                const data = await response.json();
 
-            let html = "";
-            for(let league in grouped) {
-                html += `<div class="league-group"><div class="league-header">${league}</div>`;
-                grouped[league].forEach(m => {
-                    const isNS = m.time.includes(':') || m.time === 'NS';
-                    html += `
-                    <div class="match-row" onclick="showStats('${m.id}', '${m.home} vs ${m.away}')">
-                        <div class="match-time">${m.time}</div>
-                        <div class="match-teams">
-                            <div class="team-line">
-                                <img class="team-logo" src="https://api.sofascore.app/api/v1/team/${m.homeId}/image" onerror="this.src='https://www.sofascore.com/static/images/placeholders/team.png'">
-                                <span class="team-name">${m.home}</span>
-                                <span class="team-score">${isNS ? '-' : m.scoreHome}</span>
-                            </div>
-                            <div class="team-line">
-                                <img class="team-logo" src="https://api.sofascore.app/api/v1/team/${m.awayId}/image" onerror="this.src='https://www.sofascore.com/static/images/placeholders/team.png'">
-                                <span class="team-name">${m.away}</span>
-                                <span class="team-score">${isNS ? '-' : m.scoreAway}</span>
-                            </div>
-                        </div>
-                    </div>`;
-                });
-                html += `</div>`;
+                if (data.error) throw new Error(data.error);
+
+                allLeagues = data.leagues;
+                allMatches = data.matches;
+
+                renderSidebar();
+                renderMatches(); 
+
+            } catch (error) {
+                document.getElementById('sidebar-loading').innerText = 'Gagal memuat';
+                document.getElementById('score-container').innerHTML = `<p style="color: red; text-align: center;">❌ ${error.message}</p>`;
             }
-            container.innerHTML = html;
         }
 
-        function renderSidebar(leagues) {
-            const list = document.getElementById('league-list');
-            list.innerHTML = `<li onclick="renderMatches(allMatches)" style="font-weight:bold; color:var(--primary)">🌍 Semua Liga</li>`;
-            leagues.forEach(l => {
-                let li = document.createElement('li');
-                li.innerText = l.name;
-                li.onclick = () => renderMatches(allMatches.filter(m => m.leagueId === l.id));
-                list.appendChild(li);
+        function renderSidebar() {
+            const leagueList = document.getElementById('league-list');
+            leagueList.innerHTML = `<li onclick="setLeagueFilter('ALL', 'SEMUA PERTANDINGAN')" style="color: #27ae60; font-weight: bold;">🌍 Tampilkan Semua</li>`;
+            
+            allLeagues.forEach(league => {
+                leagueList.innerHTML += `<li onclick="setLeagueFilter('${league.id}', '${league.name}')">${league.name}</li>`;
             });
         }
 
-        async function showStats(id, title) {
-            const modal = document.getElementById('statsModal');
-            const body = document.getElementById('statsBody');
-            modal.style.display = 'flex';
-            document.getElementById('modalTitle').innerText = title;
-            body.innerHTML = "Memuat statistik...";
-            
-            try {
-                const res = await fetch(`/api/extra?type=stats&id=${id}`);
-                const data = await res.json();
-                const items = data.response?.statistics?.[0]?.groups?.[0]?.statisticsItems || [];
-                
-                if(!items.length) { body.innerHTML = "Statistik belum tersedia."; return; }
-                
-                body.innerHTML = items.map(item => {
-                    const h = parseInt(item.homeValue);
-                    const a = parseInt(item.awayValue);
-                    const p = (h/(h+a))*100 || 50;
-                    return `
-                    <div class="stat-row">
-                        <div class="stat-labels"><span>${item.homeValue}</span><span>${item.name}</span><span>${item.awayValue}</span></div>
-                        <div class="stat-bar-bg"><div class="bar-h" style="width:${p}%"></div><div class="bar-a" style="width:${100-p}%"></div></div>
-                    </div>`;
-                }).join('');
-            } catch (e) { body.innerHTML = "Gagal memuat statistik."; }
+        function setLeagueFilter(id, name) {
+            currentLeagueId = id;
+            currentLeagueName = name;
+            renderMatches();
         }
 
-        function closeModal() { document.getElementById('statsModal').style.display = 'none'; }
-        init();
+        function renderMatches() {
+            const scoreContainer = document.getElementById('score-container');
+            scoreContainer.innerHTML = ''; 
+            
+            let filteredMatches = allMatches;
+            if (currentLeagueId !== 'ALL') {
+                filteredMatches = allMatches.filter(match => match.leagueId === currentLeagueId);
+            }
+
+            if (filteredMatches.length === 0) {
+                scoreContainer.innerHTML = `
+                <div class="league-group">
+                    <p style="text-align:center; padding: 30px; color: #95a5a6; font-style: italic;">
+                        Belum ada jadwal bola dari RapidAPI di tanggal ini.
+                    </p>
+                </div>`;
+                return;
+            }
+
+            let leagueHTML = `<div class="league-group"><div class="league-header">${currentLeagueName}</div>`;
+            
+            filteredMatches.forEach(match => {
+                // LOGIKA PERBAIKAN WAKTU: Jika bentuk waktunya panjang (ada spasinya seperti "17.03.2026 18:45"), kita ubah jadi dua baris
+                let formattedTime = match.time;
+                if (formattedTime.includes(' ')) {
+                    formattedTime = formattedTime.replace(' ', '<br>');
+                }
+
+                // LOGIKA PERBAIKAN SKOR: 
+                // Jika status pertandingannya adalah 'NS' (Not Started), 'TBD', atau di dalamnya ada tanda titik dua (contoh: "18:45"),
+                // maka itu artinya belum main. Skor harus dikosongkan (diubah jadi strip).
+                let displayHomeScore = match.scoreHome;
+                let displayAwayScore = match.scoreAway;
+                
+                if (match.time === 'NS' || match.time === 'Not Started' || match.time.includes(':')) {
+                    displayHomeScore = '-';
+                    displayAwayScore = '-';
+                }
+
+                leagueHTML += `
+                <div class="match-row">
+                    <div class="match-time">${formattedTime}</div>
+                    <div class="match-teams">
+                        <div class="team-line">
+                            <span class="team-name">${match.home}</span>
+                            <span class="team-score">${displayHomeScore}</span>
+                        </div>
+                        <div class="team-line">
+                            <span class="team-name">${match.away}</span>
+                            <span class="team-score">${displayAwayScore}</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+
+            leagueHTML += `</div>`;
+            scoreContainer.innerHTML = leagueHTML;
+        }
+
+        generateDateSelector();
+        fetchAppDaya(currentDateString);
     </script>
 </body>
 </html>
