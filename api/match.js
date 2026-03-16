@@ -10,7 +10,7 @@ export default async function handler(req, res) {
             method: 'GET',
             headers: { 
                 // 👇 GANTI DENGAN API KEY ANDA YANG BARU (AKUN BARU) 👇
-                'x-apisports-key': 'MASUKKAN_API_KEY_BARU_DI_SINI' 
+                'x-apisports-key': '33f3623d8634822bda56a37df178802d' 
             }
         };
 
