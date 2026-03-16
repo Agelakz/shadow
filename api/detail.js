@@ -1,9 +1,12 @@
 export default async function handler(req, res) {
-    // SIHIR CACHING VERCEL: Simpan data analisis selama 5 MENIT (300 detik)
+    // SIHIR CACHING VERCEL
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
 
     const { type, id, h2h, league, season } = req.query;
-    const apiKey = 'API_KEY_BARU_ANDA'; // MASUKKAN API KEY BARU DI SINI JUGA
+    
+    // 👇 GANTI DENGAN API KEY ANDA YANG BARU JUGA 👇
+    const apiKey = 'MASUKKAN_API_KEY_BARU_DI_SINI'; 
+    
     let url = "";
 
     if (type === 'stats') {
