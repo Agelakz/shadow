@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
     // SIHIR CACHING VERCEL
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
-
+// Cache 30 menit (1800 detik)
+res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
     const { type, id, h2h, league, season } = req.query;
     
     // 👇 GANTI DENGAN API KEY ANDA YANG BARU JUGA 👇
