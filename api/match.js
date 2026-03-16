@@ -15,30 +15,42 @@ export default async function handler(req, res) {
         const response = await fetch(url, options);
         const rawData = await response.json();
         
-        // Membuka laci yang benar
         let matchesArray = [];
         if (rawData.response?.matches) matchesArray = rawData.response.matches;
         else if (rawData.events) matchesArray = rawData.events;
 
         const mappedMatches = matchesArray.map((match, index) => {
-            // EKSTRAKSI SKOR SUPER KETAT
-            let hScore = match.homeScore?.display ?? match.homeScore?.current ?? match.score?.home ?? "-";
-            let aScore = match.awayScore?.display ?? match.awayScore?.current ?? match.score?.away ?? "-";
+            let hScore = match.homeScore?.display ?? match.homeScore?.current ?? "-";
+            let aScore = match.awayScore?.display ?? match.awayScore?.current ?? "-";
 
-            // EKSTRAKSI NAMA LIGA YANG BENAR
             const leagueName = match.tournament?.name || match.league?.name || match.tournament?.category?.name || "Lain-lain";
-            const leagueId = match.tournament?.uniqueTournament?.id || match.tournament?.id || match.league?.id || "ALL";
+            const leagueId = match.tournament?.uniqueTournament?.id || match.tournament?.id || "ALL";
 
-            // EKSTRAKSI JAM
-            let timeDisplay = match.status?.description || match.status?.type || "FT";
+            // LOGIKA MESIN WAKTU ANTI-GAGAL
+            let timeDisplay = "FT";
+            let isUnplayed = false;
+            
             if (match.startTimestamp) {
-                const dateObj = new Date(match.startTimestamp * 1000);
-                const hours = String(dateObj.getHours()).padStart(2, '0');
-                const mins = String(dateObj.getMinutes()).padStart(2, '0');
-                if (timeDisplay.toLowerCase().includes('not start') || match.status?.code === 0) {
+                const matchTimeMs = match.startTimestamp * 1000;
+                const nowMs = Date.now();
+                
+                // Jika waktu kick-off masih di masa depan, ATAU status API bilang belum mulai
+                if (matchTimeMs > nowMs || match.status?.type === 'notstarted' || match.status?.code === 0) {
+                    const dateObj = new Date(matchTimeMs);
+                    const hours = String(dateObj.getHours()).padStart(2, '0');
+                    const mins = String(dateObj.getMinutes()).padStart(2, '0');
                     timeDisplay = `${hours}:${mins}`;
-                } else if (timeDisplay.toLowerCase().includes('end') || match.status?.code === 100) {
-                    timeDisplay = 'FT';
+                    isUnplayed = true;
+                    hScore = "-"; // Paksa skor jadi strip
+                    aScore = "-";
+                } 
+                // Jika sedang berlangsung
+                else if (match.status?.type === 'inprogress') {
+                    timeDisplay = "Live";
+                } 
+                // Jika sudah lewat
+                else {
+                    timeDisplay = match.status?.description === "Ended" ? "FT" : (match.status?.description || "FT");
                 }
             }
 
@@ -51,27 +63,12 @@ export default async function handler(req, res) {
                 scoreHome: hScore,
                 scoreAway: aScore,
                 time: timeDisplay,
-                leagueId: leagueId,
                 leagueName: leagueName
             };
         });
 
-        // FILTER LIGA: Hanya ambil liga terkenal untuk di sidebar
-        const topLeagueNames = ['Premier League', 'LaLiga', 'Serie A', 'Bundesliga', 'Ligue 1', 'UEFA Champions League', 'UEFA Europa League', 'Eredivisie', 'Championship', 'World Cup'];
-        
-        const leagueMap = new Map();
-        mappedMatches.forEach(m => {
-            if (m.leagueName !== "Lain-lain") leagueMap.set(m.leagueId, m.leagueName);
-        });
-
-        const uniqueLeagues = Array.from(leagueMap).map(([id, name]) => ({ id, name }));
-        // Saring: Jika namanya mengandung daftar Top Liga di atas
-        let filteredLeagues = uniqueLeagues.filter(l => topLeagueNames.some(top => l.name.includes(top)));
-        
-        // Jika sedang tidak ada liga top, tampilkan 10 liga acak saja agar tidak kosong
-        if (filteredLeagues.length === 0) filteredLeagues = uniqueLeagues.slice(0, 10);
-
-        res.status(200).json({ leagues: filteredLeagues, matches: mappedMatches });
+        // Backend hanya mengirimkan data, Frontend yang mengatur menu
+        res.status(200).json({ matches: mappedMatches });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
