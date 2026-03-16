@@ -39,8 +39,11 @@
         /* MODAL CSS */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto;}
-        .modal-tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-weight: bold; color: #95a5a6; border-bottom: 2px solid transparent; transition: 0.2s; font-size: 0.9em; }
+        
+        /* 4 TAB MENU */
+        .modal-tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; overflow-x: auto; scrollbar-width: none;}
+        .modal-tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-weight: bold; color: #95a5a6; border-bottom: 2px solid transparent; transition: 0.2s; font-size: 0.85em; white-space: nowrap;}
         .tab-btn:hover { color: var(--dark); }
         .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
         
@@ -55,6 +58,12 @@
         .stat-bar-bg { background: #eee; height: 8px; border-radius: 4px; display: flex; overflow: hidden; }
         .bar-h { background: var(--primary); height: 100%; }
         .bar-a { background: #e74c3c; height: 100%; }
+        
+        /* ODDS BOX CSS */
+        .odds-box { flex: 1; background: #f8f9fa; padding: 15px 5px; border-radius: 8px; text-align: center; border: 1px solid #eee; transition: 0.2s;}
+        .odds-box:hover { border-color: var(--primary); background: #e8f8f5; }
+        .odds-label { font-size: 0.75em; color: #95a5a6; margin-bottom: 5px; text-transform: uppercase; font-weight: bold;}
+        .odds-value { font-size: 1.3em; font-weight: 900; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -90,9 +99,10 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 id="modalTitle" style="text-align:center; margin-bottom:15px; color:var(--dark);">Pusat Analisis</h3>
             <div class="modal-tabs">
-                <div class="tab-btn active" id="tab-h2h" onclick="switchTab('h2h')">Head to Head</div>
+                <div class="tab-btn active" id="tab-h2h" onclick="switchTab('h2h')">H2H</div>
                 <div class="tab-btn" id="tab-stats" onclick="switchTab('stats')">Statistik</div>
                 <div class="tab-btn" id="tab-standing" onclick="switchTab('standing')">Klasemen</div>
+                <div class="tab-btn" id="tab-odds" onclick="switchTab('odds')">Odds</div>
             </div>
             <div id="modalBody">Memuat data dari server...</div>
             <button onclick="closeModal()" style="width:100%; margin-top:20px; padding:12px; border:none; border-radius:8px; background:var(--dark); color:white; cursor:pointer; font-weight:bold;">Tutup</button>
@@ -203,7 +213,6 @@
                         timeDisplay = `<span style="color:#e74c3c">${m.statusCode}</span>`;
                     }
 
-                    // Trik aman: Ganti tanda petik di nama klub agar tidak merusak kode HTML
                     const safeTitle = `${m.home} vs ${m.away}`.replace(/'/g, "\\'");
 
                     html += `
@@ -243,7 +252,7 @@
             activeMatchData = { id, h2h, league, season }; 
             document.getElementById('statsModal').style.display = 'flex';
             document.getElementById('modalTitle').innerText = title;
-            switchTab('h2h'); 
+            switchTab('odds'); // Ubah default buka langsung ke Odds
         }
 
         async function switchTab(tabName) {
@@ -255,14 +264,13 @@
 
             try {
                 let url = `/api/detail?type=${tabName}`;
-                if (tabName === 'stats') url += `&id=${activeMatchData.id}`;
+                if (tabName === 'stats' || tabName === 'odds') url += `&id=${activeMatchData.id}`;
                 if (tabName === 'h2h') url += `&h2h=${activeMatchData.h2h}`;
                 if (tabName === 'standing') url += `&league=${activeMatchData.league}&season=${activeMatchData.season}`;
 
                 const res = await fetch(url);
                 const data = await res.json();
                 
-                // Detektor Error API
                 if (data.errors && Object.keys(data.errors).length > 0) {
                     body.innerHTML = `<p style='color:#e74c3c; text-align:center;'>Info: ${Object.values(data.errors)[0]}</p>`;
                     return;
@@ -271,10 +279,53 @@
                 if (tabName === 'stats') renderStats(data);
                 if (tabName === 'h2h') renderH2H(data);
                 if (tabName === 'standing') renderStanding(data);
+                if (tabName === 'odds') renderOdds(data);
 
             } catch (e) {
                 body.innerHTML = "<p style='color:red; text-align:center;'>Gagal memuat data.</p>";
             }
+        }
+
+        function renderOdds(data) {
+            const body = document.getElementById('modalBody');
+            const oddsData = data.response || [];
+
+            if (!oddsData.length || !oddsData[0].bookmakers.length) {
+                return body.innerHTML = "<p style='text-align:center; color:#7f8c8d; padding:20px;'>Pasaran / Odds belum dirilis untuk pertandingan ini.</p>";
+            }
+
+            // Ambil data bandar pertama (biasanya Bet365 atau Bwin) dan jenis taruhan Match Winner
+            const bookmaker = oddsData[0].bookmakers[0];
+            const bet = bookmaker.bets.find(b => b.id === 1 || b.name === "Match Winner");
+
+            if (!bet) {
+                return body.innerHTML = "<p style='text-align:center; color:#7f8c8d; padding:20px;'>Pasaran Match Winner tidak ditemukan.</p>";
+            }
+
+            let html = `
+            <div style="margin-top:10px;">
+                <p style="text-align:center; font-size:0.85em; color:#7f8c8d; margin-bottom:15px;">
+                    Sumber Bandar: <span style="font-weight:bold; color:var(--dark);">${bookmaker.name}</span>
+                </p>
+                <div style="display:flex; justify-content:space-between; gap:10px;">
+            `;
+
+            bet.values.forEach(val => {
+                let label = val.value;
+                if (label === "Home") label = "Tuan Rumah";
+                if (label === "Away") label = "Tamu";
+                if (label === "Draw") label = "Seri";
+
+                html += `
+                    <div class="odds-box">
+                        <div class="odds-label">${label}</div>
+                        <div class="odds-value">${val.odd}</div>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+            body.innerHTML = html;
         }
 
         function renderH2H(data) {
