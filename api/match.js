@@ -1,23 +1,22 @@
 export default async function handler(req, res) {
-    // URL ini kita coba arahkan ke "Livescores" atau daftar liga populer
-    // Jika endpoint ini salah, kita akan melihat error aslinya dari RapidAPI
-    const url = 'https://free-api-live-football-data.p.rapidapi.com/football-get-popular-leagues';
+    // Ini adalah URL pasti dari screenshot Anda
+    const url = 'https://free-api-live-football-data.p.rapidapi.com/football-current-live';
     
     const options = {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json',
             'x-rapidapi-host': 'free-api-live-football-data.p.rapidapi.com',
-            'x-rapidapi-key': 'aa90a97566msh0596dc8fd7c0d9ep13f42bjsna912b1c6ca9d' // API Key dari gambar Anda
+            'x-rapidapi-key': 'aa90a97566msh0596dc8fd7c0d9ep13f42bjsna912b1c6ca9d' // API Key Anda
         }
     };
 
     try {
         const response = await fetch(url, options);
+        
+        // Membaca data dari RapidAPI
         const result = await response.json();
         
-        // Kita kirimkan seluruh data MENTAH dari RapidAPI langsung ke layar Anda
-        // agar kita bisa membedah dan mempelajari strukturnya bersama-sama.
+        // Langsung tampilkan ke layar agar kita bisa pelajari bentuknya
         res.status(200).json(result);
 
     } catch (error) {
