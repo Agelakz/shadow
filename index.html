@@ -3,93 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Score Papan Atas</title>
+    <title>Papan Skor Pertandingan</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            background-color: #1e1e1e; /* Warna gelap agar terlihat elegan */
-            color: white;
-            text-align: center; 
-            padding: 30px; 
-        }
-        .scoreboard-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .match-card {
-            background: #2d2d2d;
-            border-left: 5px solid #00ff88; /* Aksen hijau neon */
-            padding: 20px;
-            border-radius: 8px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .team-name { font-size: 1.2em; font-weight: bold; }
-        .score { font-size: 1.5em; color: #00ff88; font-weight: bold; }
-        .time { font-size: 0.9em; color: #aaa; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #fff; text-align: center; padding: 20px; }
+        .board { display: flex; flex-direction: column; gap: 15px; max-width: 500px; margin: 0 auto; margin-top: 30px; }
+        .match { background: #1e1e1e; padding: 15px 25px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #00e676; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .team { font-size: 1.1em; font-weight: 600; width: 35%; }
+        .score { font-size: 1.6em; font-weight: bold; color: #00e676; }
+        .status { font-size: 0.85em; color: #888; margin-top: 5px; }
+        .center-info { display: flex; flex-direction: column; align-items: center; }
+        #loading { color: #00e676; font-style: italic; }
     </style>
 </head>
 <body>
 
-    <h1>Pertandingan Hari Ini ⚽</h1>
-    <p>Memuat data dari "API"...</p>
-
-    <div id="scoreboard" class="scoreboard-container"></div>
+    <h1>Live Score Liga ⚽</h1>
+    <div id="loading">Menghubungkan ke server...</div>
+    <div id="match-board" class="board"></div>
 
     <script>
-        // 1. Kita siapkan tempat untuk menaruh data di HTML
-        const scoreboardDiv = document.getElementById('scoreboard');
-
-        // 2. Karena kita belum memasukkan API key asli Anda, kita buat simulasi data (Data Dummy)
-        // Ini persis seperti format data yang biasanya dikirimkan oleh API
-        const dummyData = [
-            { homeTeam: "Arsenal", awayTeam: "Chelsea", score: "2 - 1", time: "88'" },
-            { homeTeam: "Real Madrid", awayTeam: "Barcelona", score: "0 - 0", time: "HT" },
-            { homeTeam: "Juventus", awayTeam: "AC Milan", score: "1 - 3", time: "FT" }
-        ];
-
-        // 3. Fungsi untuk menyusun data menjadi tampilan visual
-        function displayScores(matches) {
-            scoreboardDiv.innerHTML = ''; // Kosongkan papan skor terlebih dahulu
-            
-            matches.forEach(match => {
-                // Membuat kartu pertandingan untuk setiap data
-                const matchHTML = `
-                    <div class="match-card">
-                        <div class="team-name">${match.homeTeam}</div>
-                        <div class="score-container">
-                            <div class="score">${match.score}</div>
-                            <div class="time">${match.time}</div>
+        async function loadMatches() {
+            try {
+                // Memanggil file backend kita sendiri di Vercel
+                const response = await fetch('/api/match');
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                const board = document.getElementById('match-board');
+                
+                data.forEach(match => {
+                    const matchCard = `
+                        <div class="match">
+                            <div class="team" style="text-align: right;">${match.homeTeam}</div>
+                            <div class="center-info">
+                                <div class="score">${match.score}</div>
+                                <div class="status">${match.status}</div>
+                            </div>
+                            <div class="team" style="text-align: left;">${match.awayTeam}</div>
                         </div>
-                        <div class="team-name">${match.awayTeam}</div>
-                    </div>
-                `;
-                // Suntikkan kartu ke dalam HTML
-                scoreboardDiv.innerHTML += matchHTML;
-            });
+                    `;
+                    board.innerHTML += matchCard;
+                });
+
+            } catch (error) {
+                document.getElementById('loading').innerText = "Gagal memuat pertandingan.";
+                document.getElementById('loading').style.color = "red";
+                console.error("Error fetching matches:", error);
+            }
         }
 
-        // 4. Kita jalankan fungsinya (Seolah-olah baru selesai mengambil data dari API)
-        setTimeout(() => {
-            displayScores(dummyData);
-            document.querySelector('p').innerText = "Data berhasil dimuat!";
-        }, 1500); // Kita beri jeda 1.5 detik agar terasa seperti sedang loading dari internet
-
-        /* Catatan: Nanti jika Anda sudah punya link API dari sportsrc.org, 
-        kodenya akan kita ganti menggunakan perintah fetch() seperti ini:
-        
-        fetch('LINK_API_ANDA')
-            .then(response => response.json())
-            .then(data => displayScores(data));
-        */
+        // Jalankan saat web dibuka
+        loadMatches();
     </script>
-
 </body>
 </html>
