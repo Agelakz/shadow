@@ -5,103 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FreshScore - Live Pertandingan</title>
     <style>
-        /* --- Reset & Gaya Dasar --- */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #f4f7f6; /* Abu-abu kehijauan yang sangat lembut (Fresh) */
-            color: #2c3e50; 
-        }
-        
-        /* --- Bagian Atas (Header/Navbar) --- */
-        .navbar { 
-            background-color: #ffffff; 
-            padding: 15px 30px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #2c3e50; }
+        .navbar { background-color: #ffffff; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         .navbar h1 { color: #27ae60; font-size: 1.5em; font-weight: 800; letter-spacing: -0.5px;}
         .navbar .date { font-weight: 600; color: #7f8c8d; }
-        
-        /* --- Pembungkus Layout Utama --- */
-        .container { 
-            display: flex; 
-            max-width: 1100px; 
-            margin: 20px auto; 
-            gap: 25px; 
-            padding: 0 20px; 
-        }
-        
-        /* --- Sidebar Kiri (Daftar Liga) --- */
-        .sidebar { 
-            width: 260px; 
-            background: #ffffff; 
-            border-radius: 12px; 
-            padding: 20px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
-            height: fit-content; 
-        }
+        .container { display: flex; max-width: 1100px; margin: 20px auto; gap: 25px; padding: 0 20px; }
+        .sidebar { width: 260px; background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: fit-content; }
         .sidebar h3 { font-size: 0.9em; color: #95a5a6; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
         .sidebar ul { list-style: none; }
         .sidebar li { padding: 12px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-weight: 500; transition: all 0.2s ease; }
         .sidebar li:hover { color: #27ae60; padding-left: 15px; background-color: #f9fbf9; border-radius: 6px; border-bottom: transparent;}
-
-        /* --- Konten Utama (Kanan) --- */
         .main-content { flex: 1; }
-        
-        /* Tab Filter (Semua, Live, Selesai) */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab { 
-            padding: 8px 18px; 
-            background: #ffffff; 
-            border-radius: 20px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            font-size: 0.85em; 
-            color: #7f8c8d; 
-            border: 1px solid #e0e0e0; 
-            transition: 0.3s; 
-        }
+        .tab { padding: 8px 18px; background: #ffffff; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85em; color: #7f8c8d; border: 1px solid #e0e0e0; transition: 0.3s; }
         .tab.active { background: #27ae60; color: white; border-color: #27ae60; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2);}
-        
-        /* --- Desain Kartu Pertandingan --- */
-        .league-group { 
-            background: #ffffff; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
-            margin-bottom: 25px; 
-        }
-        .league-header { 
-            background: #e8f8f5; /* Hijau mint yang sangat pudar */
-            padding: 12px 20px; 
-            font-weight: 700; 
-            color: #16a085; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            font-size: 0.9em;
-        }
-        
-        /* Baris per Pertandingan */
-        .match-row { 
-            display: flex; 
-            align-items: center; 
-            padding: 15px 20px; 
-            border-bottom: 1px solid #f4f4f4; 
-            transition: background 0.2s; 
-        }
+        .league-group { background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 25px; }
+        .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; display: flex; align-items: center; gap: 10px; font-size: 0.9em; }
+        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; transition: background 0.2s; }
         .match-row:hover { background: #fafcfa; }
         .match-row:last-child { border-bottom: none; }
-        
-        .match-time { width: 60px; font-size: 0.9em; color: #e74c3c; font-weight: 700; } /* Merah/Oranye untuk menit live */
+        .match-time { width: 60px; font-size: 0.9em; font-weight: 700; }
         .match-teams { flex: 1; display: flex; flex-direction: column; gap: 8px; }
         .team-line { display: flex; justify-content: space-between; align-items: center; }
         .team-name { font-weight: 500; font-size: 0.95em;}
-        .team-score { font-weight: 700; font-size: 1.1em; width: 40px; text-align: right; color: #2c3e50;}
-        
+        .team-score { font-size: 1.1em; width: 40px; text-align: right; }
+        #loading { text-align: center; color: #7f8c8d; margin-top: 20px; font-style: italic; }
     </style>
 </head>
 <body>
@@ -112,81 +41,109 @@
     </div>
 
     <div class="container">
-        
         <div class="sidebar">
             <h3>Papan Atas</h3>
             <ul>
                 <li>🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</li>
-                <li>🇫🇷 Ligue 1</li>
                 <li>🇪🇸 La Liga</li>
                 <li>🎾 ATP Masters</li>
             </ul>
         </div>
 
         <div class="main-content">
-            
             <div class="tabs">
-                <div class="tab active">SEMUA</div>
-                <div class="tab">LIVE</div>
-                <div class="tab">SELESAI</div>
+                <div class="tab active" data-filter="ALL">SEMUA</div>
+                <div class="tab" data-filter="LIVE">LIVE</div>
+                <div class="tab" data-filter="FINISHED">SELESAI</div>
             </div>
 
-            <div class="league-group">
-                <div class="league-header">
-                    🏴󠁧󠁢󠁥󠁮󠁧󠁿 INGGRIS: Premier League
-                </div>
-                
-                <div class="match-row">
-                    <div class="match-time">75'</div>
-                    <div class="match-teams">
-                        <div class="team-line">
-                            <span class="team-name">Liverpool</span>
-                            <span class="team-score">2</span>
-                        </div>
-                        <div class="team-line">
-                            <span class="team-name">Tottenham</span>
-                            <span class="team-score">1</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="match-row">
-                    <div class="match-time" style="color: #95a5a6;">FT</div>
-                    <div class="match-teams">
-                        <div class="team-line">
-                            <span class="team-name" style="color: #95a5a6;">Arsenal</span>
-                            <span class="team-score" style="color: #95a5a6;">0</span>
-                        </div>
-                        <div class="team-line">
-                            <span class="team-name">Chelsea</span>
-                            <span class="team-score">1</span>
-                        </div>
-                    </div>
-                </div>
+            <div id="score-container">
+                <div id="loading">Memuat data pertandingan langsung...</div>
             </div>
-
-            <div class="league-group">
-                <div class="league-header">
-                    🎾 ATP: Indian Wells
-                </div>
-                
-                <div class="match-row">
-                    <div class="match-time">Set 2</div>
-                    <div class="match-teams">
-                        <div class="team-line">
-                            <span class="team-name">C. Alcaraz</span>
-                            <span class="team-score">6 &nbsp; 4</span>
-                        </div>
-                        <div class="team-line">
-                            <span class="team-name">J. Sinner</span>
-                            <span class="team-score">3 &nbsp; 2</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
+    <script>
+        let allData = [];
+        let currentFilter = 'ALL';
+
+        // 1. Fungsi mengambil data dari server Vercel
+        async function fetchLiveScores() {
+            try {
+                const response = await fetch('/api/match');
+                allData = await response.json();
+                renderScores();
+            } catch (error) {
+                document.getElementById('score-container').innerHTML = '<p style="color: red; text-align: center;">Gagal terhubung ke server. Pastikan Anda sudah deploy ke Vercel.</p>';
+            }
+        }
+
+        // 2. Fungsi merakit HTML sesuai filter yang dipilih
+        function renderScores() {
+            const container = document.getElementById('score-container');
+            container.innerHTML = '';
+
+            let hasMatches = false;
+
+            allData.forEach(league => {
+                // Saring pertandingan berdasarkan tombol tab yang aktif
+                const filteredMatches = league.matches.filter(match => {
+                    if (currentFilter === 'LIVE') return match.isLive;
+                    if (currentFilter === 'FINISHED') return !match.isLive;
+                    return true;
+                });
+
+                // Jika tidak ada pertandingan di liga ini setelah difilter, lewati
+                if (filteredMatches.length === 0) return;
+
+                hasMatches = true;
+                let leagueHTML = `<div class="league-group"><div class="league-header">${league.leagueName}</div>`;
+
+                filteredMatches.forEach(match => {
+                    const timeColor = match.isLive ? '#e74c3c' : '#95a5a6';
+                    const teamColor = match.isLive ? '#2c3e50' : '#95a5a6';
+                    const fontWeight = match.isLive ? '700' : '500';
+
+                    leagueHTML += `
+                    <div class="match-row">
+                        <div class="match-time" style="color: ${timeColor};">${match.time}</div>
+                        <div class="match-teams">
+                            <div class="team-line">
+                                <span class="team-name" style="color: ${teamColor};">${match.home}</span>
+                                <span class="team-score" style="color: ${teamColor}; font-weight: ${fontWeight};">${match.scoreHome}</span>
+                            </div>
+                            <div class="team-line">
+                                <span class="team-name" style="color: ${teamColor};">${match.away}</span>
+                                <span class="team-score" style="color: ${teamColor}; font-weight: ${fontWeight};">${match.scoreAway}</span>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+
+                leagueHTML += `</div>`;
+                container.innerHTML += leagueHTML;
+            });
+
+            if (!hasMatches) {
+                container.innerHTML = '<p style="text-align: center; color: #7f8c8d; margin-top: 20px;">Tidak ada pertandingan di kategori ini.</p>';
+            }
+        }
+
+        // 3. Logika saat tombol tab diklik
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                currentFilter = e.target.getAttribute('data-filter');
+                renderScores(); // Rakit ulang layarnya
+            });
+        });
+
+        // 4. Jalankan saat web dibuka dan ulangi setiap 30 detik
+        fetchLiveScores();
+        setInterval(fetchLiveScores, 30000);
+
+    </script>
 </body>
 </html>
