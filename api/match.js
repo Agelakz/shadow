@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
     // Trik Caching agar terhindar dari Banned API
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
-
+// Cache 30 menit (1800 detik)
+res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
     try {
         let queryDate = req.query.date || new Date().toISOString().split('T')[0];
         
