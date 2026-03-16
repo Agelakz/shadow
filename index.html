@@ -25,7 +25,7 @@
         .date-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
         .league-group { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; }
-        .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; font-size: 0.85em; text-transform: uppercase; display: flex; align-items: center;}
+        .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; font-size: 0.85em; text-transform: uppercase;}
         .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; cursor: pointer; gap: 20px; transition: 0.2s; }
         .match-row:hover { background: #fafcfa; transform: scale(1.01); }
         .match-time { flex: 0 0 65px; text-align: center; font-size: 0.85em; font-weight: 700; color: #7f8c8d; }
@@ -71,21 +71,31 @@
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 10px; background: #000; }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
 
+        /* =========================================================
+           SIHIR RESPONSIF UNTUK HP (MOBILE VIEWPORT)
+           ========================================================= */
         @media (max-width: 768px) {
             .navbar { padding: 12px 20px; }
             .container { flex-direction: column; padding: 0 10px; margin: 10px auto; gap: 10px;}
+            
+            /* Ubah Sidebar menjadi Menu Horizontal */
             .sidebar { width: 100%; position: static; padding: 15px; margin-bottom: 0; }
             .sidebar h3 { margin-bottom: 10px; }
             #menu-list { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; }
-            #menu-list::-webkit-scrollbar { display: none; } 
+            #menu-list::-webkit-scrollbar { display: none; } /* Hilangkan scrollbar jelek */
+            
             .sidebar li { white-space: nowrap; border: 1px solid #eee; border-radius: 20px; padding: 8px 15px; }
-            .sidebar li:hover { padding-left: 15px; } 
+            .sidebar li:hover { padding-left: 15px; } /* Mencegah tombol lompat saat ditap di HP */
             .sidebar li.active-menu { border-color: var(--primary); }
+
+            /* Sesuaikan Ukuran Row Jadwal */
             .match-row { padding: 12px; gap: 10px; }
             .match-time { flex: 0 0 50px; font-size: 0.75em; }
             .team-name { font-size: 0.85em; }
             .team-score { font-size: 0.95em; width: 25px; }
             .team-logo { width: 18px; height: 18px; }
+
+            /* Sesuaikan Modal Pop-up */
             .modal-content { padding: 15px; }
             .tab-btn { padding: 10px 5px; font-size: 0.75em; }
             .odds-box { padding: 10px 2px; }
@@ -215,39 +225,17 @@
             const endIndex = startIndex + itemsPerPage;
             const paginatedMatches = currentFilteredMatches.slice(startIndex, endIndex);
 
-            // LOGIKA PENGELOMPOKAN BARU: Gabungkan Negara dan Liga agar Unik
             const grouped = paginatedMatches.reduce((acc, m) => {
-                const groupKey = (m.leagueCountry + " - " + m.leagueName).toUpperCase();
-                
-                if(!acc[groupKey]) {
-                    acc[groupKey] = {
-                        name: m.leagueName.toUpperCase(),
-                        country: (m.leagueCountry || 'World').toUpperCase(),
-                        flag: m.leagueFlag, // URL bendera
-                        matches: []
-                    };
-                }
-                acc[groupKey].matches.push(m);
+                const upName = m.leagueName.toUpperCase();
+                if(!acc[upName]) acc[upName] = [];
+                acc[upName].push(m);
                 return acc;
             }, {});
 
             let html = "";
-            for(let key in grouped) {
-                const grp = grouped[key];
-                
-                // Jika ada gambar bendera tampilkan, jika tidak pakai icon bumi 🌍
-                const flagHtml = grp.flag 
-                    ? `<img src="${grp.flag}" style="width:20px; height:14px; margin-right:8px; border-radius:2px; object-fit:cover; border: 1px solid #ddd;">` 
-                    : `<span style="margin-right:8px;">🌍</span>`;
-
-                html += `
-                <div class="league-group">
-                    <div class="league-header">
-                        ${flagHtml} 
-                        <span style="color:#95a5a6; margin-right:6px;">${grp.country}</span> • <span style="margin-left:6px;">${grp.name}</span>
-                    </div>`;
-                    
-                grp.matches.forEach(m => {
+            for(let league in grouped) {
+                html += `<div class="league-group"><div class="league-header">${league}</div>`;
+                grouped[league].forEach(m => {
                     let timeDisplay = m.statusCode;
                     let showH = m.scoreHome;
                     let showA = m.scoreAway;
