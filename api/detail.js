@@ -9,6 +9,9 @@ export default async function handler(req, res) {
         url = `https://v3.football.api-sports.io/fixtures/headtohead?h2h=${h2h}&last=5`;
     } else if (type === 'standing') {
         url = `https://v3.football.api-sports.io/standings?league=${league}&season=${season}`;
+    } else if (type === 'odds') {
+        // JALUR BARU UNTUK BURSA TARUHAN
+        url = `https://v3.football.api-sports.io/odds?fixture=${id}`;
     } else {
         return res.status(400).json({ error: "Tipe analisis tidak valid" });
     }
