@@ -41,15 +41,15 @@
     </div>
     <div class="container">
         <div class="sidebar">
-            <h3>Daftar Liga</h3>
+            <h3>Liga Hari Ini</h3>
             <ul id="league-list">
-                <li id="sidebar-loading">Memuat data...</li>
+                <li id="sidebar-loading">Memuat...</li>
             </ul>
         </div>
         <div class="main-content">
             <div class="date-selector" id="date-selector"></div>
             <div id="score-container">
-                <div id="loading">Mencari hasil pertandingan...</div>
+                <div id="loading">Memuat jadwal dari RapidAPI...</div>
             </div>
         </div>
     </div>
@@ -60,63 +60,59 @@
 
         let allMatches = [];
         let allLeagues = [];
-        
         let currentLeagueId = 'ALL';
         let currentLeagueName = 'SEMUA PERTANDINGAN';
-        let currentDateString = 'ALL_DATES'; // Default sekarang lihat semua tanggal!
+        let currentDateString = ''; 
 
+        // 1. Buat Kalender
         function generateDateSelector() {
             const container = document.getElementById('date-selector');
             container.innerHTML = '';
             const today = new Date();
 
-            // Tombol sakti: SEMUA TANGGAL
-            const btnAll = document.createElement('div');
-            btnAll.className = `date-btn active`;
-            btnAll.innerText = 'SEMUA TANGGAL';
-            btnAll.onclick = () => {
-                document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
-                btnAll.classList.add('active');
-                currentDateString = 'ALL_DATES';
-                renderMatches();
-            };
-            container.appendChild(btnAll);
-
-            for(let i = 0; i < 7; i++) {
+            for(let i = -1; i < 6; i++) { // Mundur 1 hari ke belakang, 6 hari ke depan
                 let d = new Date(today);
                 d.setDate(today.getDate() + i);
+                
                 const yyyy = d.getFullYear();
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
                 const dd = String(d.getDate()).padStart(2, '0');
                 const dateStr = `${yyyy}-${mm}-${dd}`;
-                const displayDay = d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+                
+                let displayDay = d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+                if (i === 0) displayDay = "HARI INI";
+                if (i === -1) displayDay = "KEMARIN";
+
+                if (i === 0) currentDateString = dateStr;
 
                 const btn = document.createElement('div');
-                btn.className = `date-btn`;
-                btn.innerText = i === 0 ? 'HARI INI' : displayDay;
+                btn.className = `date-btn ${i === 0 ? 'active' : ''}`;
+                btn.innerText = displayDay;
                 
                 btn.onclick = () => {
                     document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentDateString = dateStr;
-                    renderMatches(); 
+                    currentLeagueId = 'ALL'; // Reset filter liga
+                    currentLeagueName = 'SEMUA PERTANDINGAN';
+                    fetchAppDaya(dateStr); // Tarik data baru dari API
                 };
                 container.appendChild(btn);
             }
         }
 
-        async function fetchAppDaya() {
-            generateDateSelector(); 
-
+        // 2. Minta Data ke Backend
+        async function fetchAppDaya(dateStr) {
+            document.getElementById('score-container').innerHTML = '<div id="loading">Memuat data bola...</div>';
+            
             try {
-                const response = await fetch('/api/match');
-                if (!response.ok) throw new Error(`Server Vercel terputus (Status: ${response.status})`);
-                
+                // Sekarang URL fetch-nya canggih, mengirimkan tanggal!
+                const response = await fetch(`/api/match?date=${dateStr}`);
                 const data = await response.json();
                 
-                if (data.error) {
-                    throw new Error(data.error);
-                }
+                console.log("MATA-MATA RAPID API:", data.debugRaw);
+
+                if (data.error) throw new Error(data.error);
 
                 allLeagues = data.leagues;
                 allMatches = data.matches;
@@ -125,9 +121,8 @@
                 renderMatches(); 
 
             } catch (error) {
-                console.error("Terjadi Error:", error);
                 document.getElementById('sidebar-loading').innerText = 'Gagal memuat';
-                document.getElementById('score-container').innerHTML = `<p style="color: red; text-align: center; margin-top: 30px;">❌ ${error.message}</p>`;
+                document.getElementById('score-container').innerHTML = `<p style="color: red; text-align: center;">❌ ${error.message}</p>`;
             }
         }
 
@@ -150,25 +145,16 @@
             const scoreContainer = document.getElementById('score-container');
             scoreContainer.innerHTML = ''; 
             
-            // Filter Lapis 1: Tanggal
             let filteredMatches = allMatches;
-            if (currentDateString !== 'ALL_DATES') {
-                filteredMatches = filteredMatches.filter(match => match.dateString === currentDateString);
-            }
-
-            // Filter Lapis 2: Liga (Dilemaskan)
             if (currentLeagueId !== 'ALL') {
-                // Catatan: Karena API sportsrc tidak mengirimkan ID liga, data akan selalu kosong saat difilter.
-                // Kita filter secara "pura-pura" agar tidak error, tapi hasilnya akan kosong sesuai data asli API.
-                filteredMatches = filteredMatches.filter(match => match.leagueId === currentLeagueId);
+                filteredMatches = allMatches.filter(match => match.leagueId === currentLeagueId);
             }
 
             if (filteredMatches.length === 0) {
                 scoreContainer.innerHTML = `
                 <div class="league-group">
-                    <div class="league-header">${currentLeagueName}</div>
                     <p style="text-align:center; padding: 30px; color: #95a5a6; font-style: italic;">
-                        Data dari API sportsrc tidak menyediakan pertandingan untuk kategori ini.
+                        Belum ada jadwal bola dari RapidAPI di tanggal ini.
                     </p>
                 </div>`;
                 return;
@@ -198,7 +184,9 @@
             scoreContainer.innerHTML = leagueHTML;
         }
 
-        fetchAppDaya();
+        // Jalankan saat web dibuka
+        generateDateSelector();
+        fetchAppDaya(currentDateString);
     </script>
 </body>
 </html>
