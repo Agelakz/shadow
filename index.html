@@ -44,7 +44,7 @@
         <div class="sidebar">
             <h3>Daftar Liga</h3>
             <ul id="league-list">
-                <li>Memuat liga...</li>
+                <li id="sidebar-loading">Memuat liga...</li>
             </ul>
         </div>
 
@@ -56,71 +56,65 @@
     </div>
 
     <script>
-        // Set tanggal
         const options = { weekday: 'long', day: 'numeric', month: 'long' };
         document.getElementById('today-date').innerText = new Date().toLocaleDateString('id-ID', options);
 
-        // VARIABEL GLOBAL: Untuk menyimpan semua data agar tidak perlu memanggil API berulang kali saat sidebar diklik
         let allMatches = [];
         let allLeagues = [];
 
         async function fetchAppDaya() {
             try {
                 const response = await fetch('/api/match');
+                
+                // Mencegah nge-hang: Jika server bermasalah, paksa masuk ke blok Error
+                if (!response.ok) {
+                    throw new Error(`Server Vercel terputus (Status: ${response.status})`);
+                }
+
                 const data = await response.json();
 
-                // Simpan data ke variabel global
                 allLeagues = data.leagues;
                 allMatches = data.matches;
 
                 renderSidebar();
-                
-                // Saat pertama kali web dibuka, tampilkan SEMUA pertandingan
                 renderMatches('ALL', 'SEMUA PERTANDINGAN'); 
 
             } catch (error) {
-                console.error(error);
-                document.getElementById('score-container').innerHTML = '<p style="color: red; text-align: center;">Gagal memuat data dari server.</p>';
+                console.error("Terjadi Error:", error);
+                document.getElementById('sidebar-loading').innerText = 'Gagal memuat';
+                document.getElementById('sidebar-loading').style.color = 'red';
+                document.getElementById('score-container').innerHTML = `<p style="color: red; text-align: center; font-weight: bold; margin-top: 30px;">❌ ${error.message}.<br><span style="font-weight: normal; font-size: 0.9em; color: #7f8c8d;">Silakan refresh (F5) halaman ini.</span></p>`;
             }
         }
 
-        // FUNGSI 1: Merakit Sidebar dan Memasang Tombol Klik (onclick)
         function renderSidebar() {
             const leagueList = document.getElementById('league-list');
-            
-            // Tambahkan tombol "Tampilkan Semua" di paling atas
             leagueList.innerHTML = `<li onclick="renderMatches('ALL', 'SEMUA PERTANDINGAN')" style="color: #27ae60; font-weight: bold;">🌍 Tampilkan Semua</li>`;
             
-            // Looping liga dari API
             allLeagues.forEach(league => {
-                // Perhatikan atribut onclick di bawah ini. Inilah yang membuat sidebar bisa diklik!
+                // Di sini letak ajaibnya! Nama liga sekarang bisa diklik.
                 leagueList.innerHTML += `<li onclick="renderMatches('${league.id}', '${league.name}')">${league.name}</li>`;
             });
         }
 
-        // FUNGSI 2: Menyaring dan Menampilkan Pertandingan berdasarkan Liga yang diklik
         function renderMatches(leagueId, leagueName) {
             const scoreContainer = document.getElementById('score-container');
-            scoreContainer.innerHTML = ''; // Kosongkan layar tengah dulu
+            scoreContainer.innerHTML = ''; 
             
-            // Proses Filter Data
             let filteredMatches = allMatches;
             if (leagueId !== 'ALL') {
-                // Jika yang diklik bukan "Semua", saring data yang ID Liganya cocok
                 filteredMatches = allMatches.filter(match => match.leagueId === leagueId);
             }
 
-            // Jika liga yang diklik ternyata tidak ada jadwal hari ini
             if (filteredMatches.length === 0) {
                 scoreContainer.innerHTML = `
                 <div class="league-group">
                     <div class="league-header">${leagueName}</div>
-                    <p style="text-align:center; padding: 20px; color: #7f8c8d;">Belum ada jadwal untuk liga ini.</p>
+                    <p style="text-align:center; padding: 20px; color: #7f8c8d;">Belum ada jadwal untuk liga ini hari ini.</p>
                 </div>`;
                 return;
             }
 
-            // Jika datanya ada, rakit dan tampilkan ke layar
             let leagueHTML = `<div class="league-group"><div class="league-header">${leagueName}</div>`;
             
             filteredMatches.forEach(match => {
@@ -145,7 +139,6 @@
             scoreContainer.innerHTML = leagueHTML;
         }
 
-        // Jalankan program utama
         fetchAppDaya();
     </script>
 </body>
