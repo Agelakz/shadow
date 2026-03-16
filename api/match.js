@@ -24,16 +24,18 @@ export default async function handler(req, res) {
                 away: match.teams.away.name,
                 homeLogo: match.teams.home.logo,
                 awayLogo: match.teams.away.logo,
+                // INI YANG MEMBUAT H2H & KLASEMEN BEKERJA:
                 homeId: match.teams.home.id,
                 awayId: match.teams.away.id,
+                leagueId: match.league.id,
+                season: match.league.season,
+                
                 scoreHome: match.goals.home !== null ? match.goals.home : "-",
                 scoreAway: match.goals.away !== null ? match.goals.away : "-",
                 timestamp: match.fixture.timestamp,
                 statusCode: match.fixture.status.short,
                 statusDesc: match.fixture.status.long,
-                leagueName: match.league.name.toLowerCase(),
-                leagueId: match.league.id,
-                season: match.league.season // Menarik tahun musim untuk Klasemen!
+                leagueName: match.league.name.toLowerCase()
             };
         });
 
