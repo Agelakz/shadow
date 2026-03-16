@@ -10,7 +10,7 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--dark); line-height: 1.6; }
         .navbar { background: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
         .container { display: flex; max-width: 1100px; margin: 20px auto; gap: 20px; padding: 0 15px; }
-        .sidebar { width: 260px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: fit-content; position: sticky; top: 85px; max-height: 80vh; overflow-y: auto;}
+        .sidebar { width: 260px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: fit-content; position: sticky; top: 85px; }
         .sidebar h3 { font-size: 0.8em; color: #95a5a6; margin-bottom: 15px; text-transform: uppercase; }
         .sidebar li { padding: 10px; border-bottom: 1px solid #f8f8f8; cursor: pointer; font-size: 0.9em; list-style: none; transition: 0.2s; border-radius: 5px; }
         .sidebar li:hover { background: #e8f8f5; color: var(--primary); font-weight: bold;}
@@ -21,9 +21,7 @@
         .date-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         .league-group { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; }
         .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; font-size: 0.85em; text-transform: uppercase;}
-        
-        /* TATA LETAK ANTI-TABRAKAN */
-        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; cursor: pointer; gap: 20px; }
+        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; gap: 20px; }
         .match-row:hover { background: #fafcfa; }
         .match-time { flex: 0 0 65px; text-align: center; font-size: 0.85em; font-weight: 700; color: #7f8c8d; }
         .match-teams { flex: 1; display: flex; flex-direction: column; gap: 8px; }
@@ -31,17 +29,22 @@
         .team-logo { width: 22px; height: 22px; object-fit: contain; }
         .team-name { font-weight: 500; font-size: 0.95em; flex: 1; }
         .team-score { font-weight: 800; font-size: 1.1em; width: 30px; text-align: right; }
+        
+        /* TOMBOL HALAMAN (PAGINASI) */
+        .pagination { display: flex; justify-content: center; gap: 15px; margin-top: 20px; padding-bottom: 30px; align-items: center;}
+        .page-btn { padding: 10px 20px; border: 1px solid var(--primary); background: white; color: var(--primary); cursor: pointer; border-radius: 8px; font-weight: bold; transition: 0.2s;}
+        .page-btn:hover { background: var(--primary); color: white; }
+        .page-btn:disabled { border-color: #ccc; color: #ccc; background: #f9f9f9; cursor: not-allowed; }
     </style>
 </head>
 <body>
     <div class="navbar">
         <h1 style="color:var(--primary); cursor:pointer" onclick="location.reload()">Nutsdose</h1>
-        <div id="display-date" style="font-weight:600; font-size:0.9em;"></div>
     </div>
 
     <div class="container">
         <div class="sidebar">
-            <h3>Pilih Liga</h3>
+            <h3>Top Liga</h3>
             <ul id="league-list"><li>Memuat...</li></ul>
         </div>
         <div class="main-content">
@@ -54,7 +57,10 @@
 
     <script>
         let allMatches = [];
-        const fallbackLogo = "https://cdn-icons-png.flaticon.com/512/53/53283.png"; // Logo bola jika rusak
+        let currentFilteredMatches = [];
+        let currentPage = 1;
+        const itemsPerPage = 10; // MAKSIMAL 10 MATCH PER HALAMAN!
+        const fallbackLogo = "https://cdn-icons-png.flaticon.com/512/53/53283.png";
 
         function init() {
             const selector = document.getElementById('date-selector');
@@ -81,21 +87,34 @@
         }
 
         async function loadData(date) {
-            document.getElementById('score-container').innerHTML = "<p style='text-align: center; margin-top: 30px;'>Sedang menyinkronkan data...</p>";
+            document.getElementById('score-container').innerHTML = "<p style='text-align: center; margin-top: 30px;'>Menarik data server...</p>";
             try {
                 const res = await fetch(`/api/match?date=${date}`);
                 const data = await res.json();
                 allMatches = data.matches;
-                renderMatches(data.matches);
+                
+                // Setel awal agar menampilkan semua pertandingan
+                currentFilteredMatches = allMatches;
+                renderPage(1); 
                 renderSidebar(data.leagues);
-            } catch (e) { document.getElementById('score-container').innerHTML = "<p style='color:red; text-align:center;'>Gagal mengambil data. Server sibuk.</p>"; }
+            } catch (e) { document.getElementById('score-container').innerHTML = "<p style='color:red; text-align:center;'>Gagal mengambil data.</p>"; }
         }
 
-        function renderMatches(matches) {
+        // FUNGSI RENDER HALAMAN KE-X
+        function renderPage(page) {
+            currentPage = page;
             const container = document.getElementById('score-container');
-            if(!matches || !matches.length) { container.innerHTML = "<p style='text-align:center; padding:20px;'>Tidak ada jadwal untuk tanggal ini.</p>"; return; }
-            
-            const grouped = matches.reduce((acc, m) => {
+            if(!currentFilteredMatches || !currentFilteredMatches.length) { 
+                container.innerHTML = "<p style='text-align:center; padding:20px;'>Tidak ada jadwal.</p>"; 
+                return; 
+            }
+
+            // Potong data sesuai halaman (contoh: Hal 1 = index 0 sampai 10)
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedMatches = currentFilteredMatches.slice(startIndex, endIndex);
+
+            const grouped = paginatedMatches.reduce((acc, m) => {
                 if(!acc[m.leagueName]) acc[m.leagueName] = [];
                 acc[m.leagueName].push(m);
                 return acc;
@@ -105,8 +124,7 @@
             for(let league in grouped) {
                 html += `<div class="league-group"><div class="league-header">${league}</div>`;
                 grouped[league].forEach(m => {
-                    // Cek jika jamnya berupa angka, berarti belum mulai. Jika FT/HT, tampilkan skor
-                    const isUnplayed = m.time.includes(':');
+                    const isUnplayed = m.time.includes(':') || m.time === 'NS';
                     const showH = isUnplayed ? '-' : m.scoreHome;
                     const showA = isUnplayed ? '-' : m.scoreAway;
                     
@@ -129,27 +147,47 @@
                 });
                 html += `</div>`;
             }
+
+            // BUAT TOMBOL PAGINASI DI BAWAH
+            const totalPages = Math.ceil(currentFilteredMatches.length / itemsPerPage);
+            if (totalPages > 1) {
+                html += `
+                <div class="pagination">
+                    <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="renderPage(${currentPage - 1})">← Prev</button>
+                    <span style="font-weight:bold; color:#7f8c8d;">Halaman ${currentPage} dari ${totalPages}</span>
+                    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="renderPage(${currentPage + 1})">Next →</button>
+                </div>`;
+            }
+
             container.innerHTML = html;
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // Otomatis gulir ke atas saat ganti halaman
         }
 
         function renderSidebar(leagues) {
             const list = document.getElementById('league-list');
             if (!leagues || !leagues.length) {
-                list.innerHTML = "<li>Tidak ada data liga</li>";
+                list.innerHTML = "<li>Liga Top Sedang Libur</li>";
                 return;
             }
             
-            list.innerHTML = `<li onclick="renderMatches(allMatches)" style="font-weight:bold; color:var(--primary)">🌍 Semua Pertandingan</li>`;
-            
-            // Urutkan nama liga berdasarkan abjad
-            leagues.sort((a, b) => a.name.localeCompare(b.name));
+            list.innerHTML = `<li onclick="filterLeague('ALL')" style="font-weight:bold; color:var(--primary)">🌍 Tampilkan Semua</li>`;
             
             leagues.forEach(l => {
                 let li = document.createElement('li');
                 li.innerText = l.name;
-                li.onclick = () => renderMatches(allMatches.filter(m => m.leagueId === l.id));
+                li.onclick = () => filterLeague(l.id);
                 list.appendChild(li);
             });
+        }
+
+        // FUNGSI FILTER SAAT KLIK LIGA DI SIDEBAR
+        function filterLeague(leagueId) {
+            if (leagueId === 'ALL') {
+                currentFilteredMatches = allMatches;
+            } else {
+                currentFilteredMatches = allMatches.filter(m => m.leagueId === leagueId);
+            }
+            renderPage(1); // Selalu kembalikan ke halaman 1 setelah filter
         }
 
         init();
