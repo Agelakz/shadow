@@ -34,7 +34,7 @@ export default async function handler(req, res) {
             // 4. Membungkus data sesuai format yang diminta frontend kita
             const formattedData = [
                 {
-                    leagueName: "⚽ JADWAL PERTANDINGAN (sportsrc.org)",
+                    leagueName: "⚽ JADWAL PERTANDINGAN",
                     matches: mappedMatches
                 }
             ];
