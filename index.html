@@ -23,14 +23,26 @@
         .date-btn.active { background: #27ae60; color: white; border-color: #27ae60; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2); }
         .league-group { background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 25px; }
         .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; display: flex; align-items: center; gap: 10px; font-size: 0.9em; text-transform: uppercase; }
-        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; transition: background 0.2s; }
+        
+        /* PERBAIKAN CSS TATA LETAK */
+        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; transition: background 0.2s; gap: 20px; } /* Menambah jarak (gap) antar elemen */
         .match-row:hover { background: #fafcfa; }
         .match-row:last-child { border-bottom: none; }
-        .match-time { width: 60px; font-size: 0.85em; font-weight: 700; color: #7f8c8d; }
+        
+        .match-time { 
+            min-width: 70px; /* Lebar fleksibel, tidak dikunci di 60px lagi */
+            font-size: 0.85em; 
+            font-weight: 700; 
+            color: #7f8c8d; 
+            display: flex; 
+            flex-direction: column; /* Membuat tanggal dan jam turun ke bawah dengan rapi */
+            line-height: 1.4;
+        }
+        
         .match-teams { flex: 1; display: flex; flex-direction: column; gap: 8px; }
         .team-line { display: flex; justify-content: space-between; align-items: center; }
         .team-name { font-weight: 500; font-size: 0.95em;}
-        .team-score { font-size: 1.1em; width: 40px; text-align: right; font-weight: 700; }
+        .team-score { font-size: 1.1em; width: 40px; text-align: right; font-weight: 700; color: #2c3e50;}
         #loading { text-align: center; color: #7f8c8d; margin-top: 20px; font-style: italic; }
     </style>
 </head>
@@ -64,13 +76,12 @@
         let currentLeagueName = 'SEMUA PERTANDINGAN';
         let currentDateString = ''; 
 
-        // 1. Buat Kalender
         function generateDateSelector() {
             const container = document.getElementById('date-selector');
             container.innerHTML = '';
             const today = new Date();
 
-            for(let i = -1; i < 6; i++) { // Mundur 1 hari ke belakang, 6 hari ke depan
+            for(let i = -1; i < 6; i++) { 
                 let d = new Date(today);
                 d.setDate(today.getDate() + i);
                 
@@ -93,24 +104,20 @@
                     document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentDateString = dateStr;
-                    currentLeagueId = 'ALL'; // Reset filter liga
+                    currentLeagueId = 'ALL'; 
                     currentLeagueName = 'SEMUA PERTANDINGAN';
-                    fetchAppDaya(dateStr); // Tarik data baru dari API
+                    fetchAppDaya(dateStr); 
                 };
                 container.appendChild(btn);
             }
         }
 
-        // 2. Minta Data ke Backend
         async function fetchAppDaya(dateStr) {
             document.getElementById('score-container').innerHTML = '<div id="loading">Memuat data bola...</div>';
             
             try {
-                // Sekarang URL fetch-nya canggih, mengirimkan tanggal!
                 const response = await fetch(`/api/match?date=${dateStr}`);
                 const data = await response.json();
-                
-                console.log("MATA-MATA RAPID API:", data.debugRaw);
 
                 if (data.error) throw new Error(data.error);
 
@@ -163,17 +170,34 @@
             let leagueHTML = `<div class="league-group"><div class="league-header">${currentLeagueName}</div>`;
             
             filteredMatches.forEach(match => {
+                // LOGIKA PERBAIKAN WAKTU: Jika bentuk waktunya panjang (ada spasinya seperti "17.03.2026 18:45"), kita ubah jadi dua baris
+                let formattedTime = match.time;
+                if (formattedTime.includes(' ')) {
+                    formattedTime = formattedTime.replace(' ', '<br>');
+                }
+
+                // LOGIKA PERBAIKAN SKOR: 
+                // Jika status pertandingannya adalah 'NS' (Not Started), 'TBD', atau di dalamnya ada tanda titik dua (contoh: "18:45"),
+                // maka itu artinya belum main. Skor harus dikosongkan (diubah jadi strip).
+                let displayHomeScore = match.scoreHome;
+                let displayAwayScore = match.scoreAway;
+                
+                if (match.time === 'NS' || match.time === 'Not Started' || match.time.includes(':')) {
+                    displayHomeScore = '-';
+                    displayAwayScore = '-';
+                }
+
                 leagueHTML += `
                 <div class="match-row">
-                    <div class="match-time">${match.time}</div>
+                    <div class="match-time">${formattedTime}</div>
                     <div class="match-teams">
                         <div class="team-line">
                             <span class="team-name">${match.home}</span>
-                            <span class="team-score">${match.scoreHome}</span>
+                            <span class="team-score">${displayHomeScore}</span>
                         </div>
                         <div class="team-line">
                             <span class="team-name">${match.away}</span>
-                            <span class="team-score">${match.scoreAway}</span>
+                            <span class="team-score">${displayAwayScore}</span>
                         </div>
                     </div>
                 </div>
@@ -184,7 +208,6 @@
             scoreContainer.innerHTML = leagueHTML;
         }
 
-        // Jalankan saat web dibuka
         generateDateSelector();
         fetchAppDaya(currentDateString);
     </script>
