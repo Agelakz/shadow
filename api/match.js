@@ -9,8 +9,8 @@ export default async function handler(req, res) {
         const options = {
             method: 'GET',
             headers: { 
-                // MASUKKAN API KEY API-FOOTBALL ANDA DI SINI!
-                'x-apisports-key': '20178b9693c87fccba1b1cbd4cc44830' 
+                // 👇 GANTI DENGAN API KEY ANDA YANG BARU (AKUN BARU) 👇
+                'x-apisports-key': 'MASUKKAN_API_KEY_BARU_DI_SINI' 
             }
         };
 
