@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     const { type, id, h2h, league, season } = req.query;
     
     // 👇 GANTI DENGAN API KEY ANDA YANG BARU JUGA 👇
-    const apiKey = 'MASUKKAN_API_KEY_BARU_DI_SINI'; 
+    const apiKey = '33f3623d8634822bda56a37df178802d'; 
     
     let url = "";
 
