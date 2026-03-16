@@ -1,54 +1,40 @@
 export default async function handler(req, res) {
     try {
-        const queryDate = req.query.date || "";
-        const dateParam = queryDate.replace(/-/g, '');
+        // API-Football membutuhkan format YYYY-MM-DD
+        let queryDate = req.query.date || new Date().toISOString().split('T')[0];
         
-        const url = `https://free-api-live-football-data.p.rapidapi.com/football-get-matches-by-date?date=${dateParam}`;
+        const url = `https://v3.football.api-sports.io/fixtures?date=${queryDate}`;
         const options = {
             method: 'GET',
             headers: {
-                'x-rapidapi-host': 'free-api-live-football-data.p.rapidapi.com',
-                'x-rapidapi-key': 'aa90a97566msh0596dc8fd7c0d9ep13f42bjsna912b1c6ca9d'
+                'x-apisports-key': '20178b9693c87fccba1b1cbd4cc44830' // API Key Baru Anda!
             }
         };
 
         const response = await fetch(url, options);
         const rawData = await response.json();
         
-        // CEK APAKAH KENA LIMIT DARI RAPID API
-        if (rawData.message) {
-            return res.status(200).json({ error: `Pesan RapidAPI: ${rawData.message}` });
+        // Cek jika ada error dari API
+        if (rawData.errors && Object.keys(rawData.errors).length > 0) {
+            return res.status(200).json({ error: Object.values(rawData.errors)[0] });
         }
 
-        // BONGKAR SEMUA KEMUNGKINAN LACI DATA
-        let matchesArray = [];
-        if (Array.isArray(rawData)) matchesArray = rawData;
-        else if (rawData.response && Array.isArray(rawData.response)) matchesArray = rawData.response;
-        else if (rawData.response?.matches && Array.isArray(rawData.response.matches)) matchesArray = rawData.response.matches;
-        else if (rawData.events && Array.isArray(rawData.events)) matchesArray = rawData.events;
-        else if (rawData.data && Array.isArray(rawData.data)) matchesArray = rawData.data;
+        const matchesArray = rawData.response || [];
 
-        const mappedMatches = matchesArray.map((match, index) => {
-            let hScore = match.homeScore?.display ?? match.homeScore?.current ?? match.score?.home ?? "-";
-            let aScore = match.awayScore?.display ?? match.awayScore?.current ?? match.score?.away ?? "-";
-
-            let leagueName = "Lain-lain";
-            if (match.tournament?.name) leagueName = match.tournament.name;
-            else if (match.league?.name) leagueName = match.league.name;
-            else if (match.tournament?.category?.name) leagueName = match.tournament.category.name;
-
+        const mappedMatches = matchesArray.map((match) => {
             return {
-                id: match.id || index.toString(),
-                home: match.homeTeam?.name || match.home?.name || "Tim Kandang",
-                away: match.awayTeam?.name || match.away?.name || "Tim Tandang",
-                homeId: match.homeTeam?.id || match.home?.id,
-                awayId: match.awayTeam?.id || match.away?.id,
-                scoreHome: hScore,
-                scoreAway: aScore,
-                timestamp: match.startTimestamp || 0,
-                statusCode: match.status?.code || 0,
-                statusDesc: match.status?.description || match.status?.type || "FT",
-                leagueName: leagueName.toLowerCase() // huruf kecil agar filter mudah
+                id: match.fixture.id,
+                home: match.teams.home.name,
+                away: match.teams.away.name,
+                homeLogo: match.teams.home.logo, // Logo resmi dari API-Football!
+                awayLogo: match.teams.away.logo,
+                scoreHome: match.goals.home !== null ? match.goals.home : "-",
+                scoreAway: match.goals.away !== null ? match.goals.away : "-",
+                timestamp: match.fixture.timestamp,
+                statusCode: match.fixture.status.short, // NS (Not Started), FT, HT, dll.
+                statusDesc: match.fixture.status.long,
+                leagueName: match.league.name.toLowerCase(),
+                leagueId: match.league.id
             };
         });
 
