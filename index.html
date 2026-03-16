@@ -11,7 +11,6 @@
         .navbar { background: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
         .container { display: flex; max-width: 1100px; margin: 20px auto; gap: 20px; padding: 0 15px; }
         
-        /* SIDEBAR PERMANEN */
         .sidebar { width: 260px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: fit-content; position: sticky; top: 85px; }
         .sidebar h3 { font-size: 0.8em; color: #95a5a6; margin-bottom: 15px; text-transform: uppercase; }
         .sidebar ul { list-style: none; }
@@ -24,10 +23,11 @@
         .date-selector::-webkit-scrollbar { display: none; }
         .date-btn { padding: 8px 15px; background: white; border-radius: 20px; cursor: pointer; font-weight: 600; border: 1px solid #ddd; white-space: nowrap; font-size: 0.85em;}
         .date-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
         .league-group { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; }
         .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; font-size: 0.85em; text-transform: uppercase;}
-        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; gap: 20px; }
-        .match-row:hover { background: #fafcfa; }
+        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; cursor: pointer; gap: 20px; transition: 0.2s; }
+        .match-row:hover { background: #fafcfa; transform: scale(1.01); }
         .match-time { flex: 0 0 65px; text-align: center; font-size: 0.85em; font-weight: 700; color: #7f8c8d; }
         .match-teams { flex: 1; display: flex; flex-direction: column; gap: 8px; }
         .team-line { display: flex; align-items: center; gap: 12px; }
@@ -39,11 +39,20 @@
         .page-btn { padding: 10px 20px; border: 1px solid var(--primary); background: white; color: var(--primary); cursor: pointer; border-radius: 8px; font-weight: bold; transition: 0.2s;}
         .page-btn:hover { background: var(--primary); color: white; }
         .page-btn:disabled { border-color: #ccc; color: #ccc; background: #f9f9f9; cursor: not-allowed; }
+
+        /* MODAL STATISTIK */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; max-height: 80vh; overflow-y: auto;}
+        .stat-row { margin-bottom: 15px; }
+        .stat-labels { display: flex; justify-content: space-between; font-size: 0.8em; font-weight: bold; margin-bottom: 5px; color: #34495e;}
+        .stat-bar-bg { background: #eee; height: 8px; border-radius: 4px; display: flex; overflow: hidden; }
+        .bar-h { background: var(--primary); height: 100%; }
+        .bar-a { background: #e74c3c; height: 100%; }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <h1 style="color:var(--primary); cursor:pointer" onclick="location.reload()">Nutsdose</h1>
+        <h1 style="color:var(--primary); cursor:pointer; margin:0;" onclick="location.reload()">Nutsdose</h1>
     </div>
 
     <div class="container">
@@ -68,6 +77,14 @@
             <div id="score-container">
                 <p style="text-align: center; color: #7f8c8d; margin-top: 20px;">Memuat data pertandingan...</p>
             </div>
+        </div>
+    </div>
+
+    <div id="statsModal" class="modal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 id="modalTitle" style="text-align:center; margin-bottom:20px; color:var(--dark);">Statistik Pertandingan</h3>
+            <div id="statsBody">Memuat data dari server...</div>
+            <button onclick="closeModal()" style="width:100%; margin-top:20px; padding:12px; border:none; border-radius:8px; background:var(--dark); color:white; cursor:pointer; font-weight:bold;">Tutup</button>
         </div>
     </div>
 
@@ -109,22 +126,16 @@
                 const res = await fetch(`/api/match?date=${date}`);
                 const data = await res.json();
                 allMatches = data.matches;
-                
-                // Aplikasikan filter yang sedang aktif saat pindah tanggal
                 applyFilter();
             } catch (e) { 
                 document.getElementById('score-container').innerHTML = "<p style='color:red; text-align:center;'>Gagal mengambil data dari server.</p>"; 
             }
         }
 
-        // Fungsi saat menu liga diklik
         function filterLeague(keyword, element) {
             currentActiveKeyword = keyword;
-            
-            // Ubah warna menu yang aktif
             document.querySelectorAll('#menu-list li').forEach(li => li.classList.remove('active-menu'));
             element.classList.add('active-menu');
-            
             applyFilter();
         }
 
@@ -132,8 +143,7 @@
             if (currentActiveKeyword === 'ALL') {
                 currentFilteredMatches = allMatches;
             } else {
-                // Saring berdasarkan nama liga
-                currentFilteredMatches = allMatches.filter(m => m.leagueName.toLowerCase().includes(currentActiveKeyword));
+                currentFilteredMatches = allMatches.filter(m => m.leagueName.includes(currentActiveKeyword));
             }
             renderPage(1); 
         }
@@ -143,12 +153,7 @@
             const container = document.getElementById('score-container');
             
             if(!currentFilteredMatches || !currentFilteredMatches.length) { 
-                container.innerHTML = `
-                <div class="league-group">
-                    <p style="text-align:center; padding:30px; color:#7f8c8d; font-weight:500;">
-                        Tidak ada pertandingan untuk liga ini pada tanggal tersebut.
-                    </p>
-                </div>`; 
+                container.innerHTML = `<div class="league-group"><p style="text-align:center; padding:30px; color:#7f8c8d; font-weight:500;">Tidak ada pertandingan untuk kategori ini.</p></div>`; 
                 return; 
             }
 
@@ -157,8 +162,9 @@
             const paginatedMatches = currentFilteredMatches.slice(startIndex, endIndex);
 
             const grouped = paginatedMatches.reduce((acc, m) => {
-                if(!acc[m.leagueName]) acc[m.leagueName] = [];
-                acc[m.leagueName].push(m);
+                const upName = m.leagueName.toUpperCase();
+                if(!acc[upName]) acc[upName] = [];
+                acc[upName].push(m);
                 return acc;
             }, {});
 
@@ -166,19 +172,46 @@
             for(let league in grouped) {
                 html += `<div class="league-group"><div class="league-header">${league}</div>`;
                 grouped[league].forEach(m => {
+                    
+                    // MESIN WAKTU LOKAL: Cek berdasarkan waktu di HP pengguna
+                    let timeDisplay = "FT";
+                    let showH = m.scoreHome;
+                    let showA = m.scoreAway;
+
+                    if (m.timestamp > 0) {
+                        const matchTimeMs = m.timestamp * 1000;
+                        const nowMs = Date.now();
+                        
+                        if (matchTimeMs > nowMs || m.statusCode === 0) {
+                            // Belum mulai -> Tampilkan jam lokal
+                            const dateObj = new Date(matchTimeMs);
+                            const hours = String(dateObj.getHours()).padStart(2, '0');
+                            const mins = String(dateObj.getMinutes()).padStart(2, '0');
+                            timeDisplay = `${hours}:${mins}`;
+                            showH = "-";
+                            showA = "-";
+                        } else if (m.statusDesc.toLowerCase().includes('progress')) {
+                            // Sedang main
+                            timeDisplay = `<span style="color:#e74c3c">LIVE</span>`;
+                        } else {
+                            timeDisplay = "FT";
+                        }
+                    }
+
+                    // Trik Cerdas: Ambil Logo langsung dari Sofascore karena ID-nya sinkron dan lebih stabil untuk frontend
                     html += `
-                    <div class="match-row">
-                        <div class="match-time">${m.time}</div>
+                    <div class="match-row" onclick="openStats('${m.id}', '${m.home} vs ${m.away}')">
+                        <div class="match-time">${timeDisplay}</div>
                         <div class="match-teams">
                             <div class="team-line">
                                 <img class="team-logo" src="https://api.sofascore.app/api/v1/team/${m.homeId}/image" onerror="this.onerror=null; this.src='${fallbackLogo}';">
                                 <span class="team-name">${m.home}</span>
-                                <span class="team-score">${m.scoreHome}</span>
+                                <span class="team-score">${showH}</span>
                             </div>
                             <div class="team-line">
                                 <img class="team-logo" src="https://api.sofascore.app/api/v1/team/${m.awayId}/image" onerror="this.onerror=null; this.src='${fallbackLogo}';">
                                 <span class="team-name">${m.away}</span>
-                                <span class="team-score">${m.scoreAway}</span>
+                                <span class="team-score">${showA}</span>
                             </div>
                         </div>
                     </div>`;
@@ -200,6 +233,52 @@
             window.scrollTo({ top: 0, behavior: 'smooth' }); 
         }
 
+        // FUNGSI MEMANGGIL API STATISTIK (HARTA KARUN ANDA)
+        async function openStats(matchId, title) {
+            const modal = document.getElementById('statsModal');
+            const body = document.getElementById('statsBody');
+            modal.style.display = 'flex';
+            document.getElementById('modalTitle').innerText = title;
+            body.innerHTML = "<p style='text-align:center;'>Mengambil data statistik...</p>";
+            
+            try {
+                const res = await fetch(`/api/detail?id=${matchId}`);
+                const data = await res.json();
+                
+                // Mencari struktur statistik di dalam data RapidAPI
+                const statsArray = data.response?.statistics?.[0]?.groups?.[0]?.statisticsItems || data.statistics?.[0]?.groups?.[0]?.statisticsItems || [];
+                
+                if(!statsArray.length) { 
+                    body.innerHTML = "<p style='text-align:center; color:#e74c3c;'>Statistik belum tersedia untuk pertandingan ini.</p>"; 
+                    return; 
+                }
+                
+                body.innerHTML = statsArray.map(item => {
+                    const h = parseFloat(item.homeValue) || 0;
+                    const a = parseFloat(item.awayValue) || 0;
+                    const total = h + a;
+                    const p = total === 0 ? 50 : (h/total)*100;
+                    
+                    return `
+                    <div class="stat-row">
+                        <div class="stat-labels">
+                            <span>${item.homeValue}</span>
+                            <span>${item.name}</span>
+                            <span>${item.awayValue}</span>
+                        </div>
+                        <div class="stat-bar-bg">
+                            <div class="bar-h" style="width:${p}%"></div>
+                            <div class="bar-a" style="width:${100-p}%"></div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (e) { 
+                body.innerHTML = "<p style='text-align:center; color:red;'>Gagal memuat statistik.</p>"; 
+            }
+        }
+
+        function closeModal() { document.getElementById('statsModal').style.display = 'none'; }
+        
         init();
     </script>
 </body>
