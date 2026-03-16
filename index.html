@@ -10,20 +10,17 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--dark); line-height: 1.6; }
         .navbar { background: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
         .container { display: flex; max-width: 1100px; margin: 20px auto; gap: 20px; padding: 0 15px; }
-        
         .sidebar { width: 260px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: fit-content; position: sticky; top: 85px; }
         .sidebar h3 { font-size: 0.8em; color: #95a5a6; margin-bottom: 15px; text-transform: uppercase; }
         .sidebar ul { list-style: none; }
         .sidebar li { padding: 12px 10px; border-bottom: 1px solid #f8f8f8; cursor: pointer; font-size: 0.9em; transition: 0.2s; border-radius: 5px; font-weight: 500;}
         .sidebar li:hover { background: #e8f8f5; color: var(--primary); padding-left: 15px;}
         .sidebar li.active-menu { background: var(--primary); color: white; }
-
         .main-content { flex: 1; min-width: 0; }
         .date-selector { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; }
         .date-selector::-webkit-scrollbar { display: none; }
         .date-btn { padding: 8px 15px; background: white; border-radius: 20px; cursor: pointer; font-weight: 600; border: 1px solid #ddd; white-space: nowrap; font-size: 0.85em;}
         .date-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        
         .league-group { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; }
         .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; font-size: 0.85em; text-transform: uppercase;}
         .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; cursor: pointer; gap: 20px; transition: 0.2s; }
@@ -34,33 +31,25 @@
         .team-logo { width: 22px; height: 22px; object-fit: contain; }
         .team-name { font-weight: 500; font-size: 0.95em; flex: 1; }
         .team-score { font-weight: 800; font-size: 1.1em; width: 30px; text-align: right; }
-        
         .pagination { display: flex; justify-content: center; gap: 15px; margin-top: 20px; padding-bottom: 30px; align-items: center;}
         .page-btn { padding: 10px 20px; border: 1px solid var(--primary); background: white; color: var(--primary); cursor: pointer; border-radius: 8px; font-weight: bold; transition: 0.2s;}
         .page-btn:hover { background: var(--primary); color: white; }
         .page-btn:disabled { border-color: #ccc; color: #ccc; background: #f9f9f9; cursor: not-allowed; }
 
-        /* DESAIN MODAL ANALISIS */
+        /* MODAL CSS */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto;}
-        
-        /* TABS MENU */
         .modal-tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-weight: bold; color: #95a5a6; border-bottom: 2px solid transparent; transition: 0.2s; font-size: 0.9em; }
         .tab-btn:hover { color: var(--dark); }
         .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
-
-        /* UI Klasemen */
+        
         table { width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: center; }
         th { background: #f8f9fa; padding: 10px 5px; color: #7f8c8d; }
         td { padding: 10px 5px; border-bottom: 1px solid #f4f4f4; }
         .td-left { text-align: left; display: flex; align-items: center; gap: 8px; font-weight: 500;}
-        
-        /* UI H2H */
         .h2h-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f4f4f4; font-size: 0.85em; align-items: center;}
         .h2h-score { font-weight: bold; background: #e8f8f5; padding: 3px 8px; border-radius: 5px; color: var(--primary); }
-
-        /* UI Stats */
         .stat-row { margin-bottom: 15px; }
         .stat-labels { display: flex; justify-content: space-between; font-size: 0.8em; font-weight: bold; margin-bottom: 5px; color: #34495e;}
         .stat-bar-bg { background: #eee; height: 8px; border-radius: 4px; display: flex; overflow: hidden; }
@@ -89,7 +78,6 @@
                 <li onclick="filterLeague('liga 1', this)">🇮🇩 Liga Indonesia</li>
             </ul>
         </div>
-
         <div class="main-content">
             <div class="date-selector" id="date-selector"></div>
             <div id="score-container">
@@ -101,15 +89,12 @@
     <div id="statsModal" class="modal" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 id="modalTitle" style="text-align:center; margin-bottom:15px; color:var(--dark);">Pusat Analisis</h3>
-            
             <div class="modal-tabs">
                 <div class="tab-btn active" id="tab-h2h" onclick="switchTab('h2h')">Head to Head</div>
                 <div class="tab-btn" id="tab-stats" onclick="switchTab('stats')">Statistik</div>
                 <div class="tab-btn" id="tab-standing" onclick="switchTab('standing')">Klasemen</div>
             </div>
-
             <div id="modalBody">Memuat data dari server...</div>
-            
             <button onclick="closeModal()" style="width:100%; margin-top:20px; padding:12px; border:none; border-radius:8px; background:var(--dark); color:white; cursor:pointer; font-weight:bold;">Tutup</button>
         </div>
     </div>
@@ -120,8 +105,6 @@
         let currentPage = 1;
         const itemsPerPage = 10; 
         let currentActiveKeyword = 'ALL';
-        
-        // Simpan data match yang sedang diklik untuk dilempar antar Tab
         let activeMatchData = {}; 
 
         function init() {
@@ -155,10 +138,9 @@
                 const data = await res.json();
                 
                 if (data.error) {
-                    document.getElementById('score-container').innerHTML = `<p style='color:#e74c3c; text-align:center; font-weight:bold; padding:20px;'>❌ Oopss! <br><span style="font-weight:normal;">${data.error}</span></p>`;
+                    document.getElementById('score-container').innerHTML = `<p style='color:#e74c3c; text-align:center; font-weight:bold; padding:20px;'>❌ Error API<br><span style="font-weight:normal;">${data.error}</span></p>`;
                     return;
                 }
-                
                 allMatches = data.matches || [];
                 applyFilter();
             } catch (e) { 
@@ -206,7 +188,6 @@
             for(let league in grouped) {
                 html += `<div class="league-group"><div class="league-header">${league}</div>`;
                 grouped[league].forEach(m => {
-                    
                     let timeDisplay = m.statusCode;
                     let showH = m.scoreHome;
                     let showA = m.scoreAway;
@@ -222,9 +203,11 @@
                         timeDisplay = `<span style="color:#e74c3c">${m.statusCode}</span>`;
                     }
 
-                    // Onclick kita bawa SEMUA data untuk Modal Analisis
+                    // Trik aman: Ganti tanda petik di nama klub agar tidak merusak kode HTML
+                    const safeTitle = `${m.home} vs ${m.away}`.replace(/'/g, "\\'");
+
                     html += `
-                    <div class="match-row" onclick="openAnalysis('${m.id}', '${m.homeId}-${m.awayId}', '${m.leagueId}', '${m.season}', '${m.home} vs ${m.away}')">
+                    <div class="match-row" onclick="openAnalysis('${m.id}', '${m.homeId}-${m.awayId}', '${m.leagueId}', '${m.season}', '${safeTitle}')">
                         <div class="match-time">${timeDisplay}</div>
                         <div class="match-teams">
                             <div class="team-line">
@@ -252,21 +235,18 @@
                     <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="renderPage(${currentPage + 1})">Next →</button>
                 </div>`;
             }
-
             container.innerHTML = html;
             window.scrollTo({ top: 0, behavior: 'smooth' }); 
         }
 
-        // FUNGSI MEMBUKA MODAL DAN PINDAH TAB
         function openAnalysis(id, h2h, league, season, title) {
-            activeMatchData = { id, h2h, league, season }; // Simpan data di memori
+            activeMatchData = { id, h2h, league, season }; 
             document.getElementById('statsModal').style.display = 'flex';
             document.getElementById('modalTitle').innerText = title;
-            switchTab('h2h'); // Default buka H2H saat diklik pertama kali
+            switchTab('h2h'); 
         }
 
         async function switchTab(tabName) {
-            // Ubah warna tombol tab
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
             
@@ -274,7 +254,6 @@
             body.innerHTML = "<p style='text-align:center; padding: 20px;'>Menarik data server...</p>";
 
             try {
-                // Rakit URL berdasarkan Tab yang diklik
                 let url = `/api/detail?type=${tabName}`;
                 if (tabName === 'stats') url += `&id=${activeMatchData.id}`;
                 if (tabName === 'h2h') url += `&h2h=${activeMatchData.h2h}`;
@@ -283,22 +262,26 @@
                 const res = await fetch(url);
                 const data = await res.json();
                 
-                // Salurkan ke fungsi perakit HTML masing-masing
+                // Detektor Error API
+                if (data.errors && Object.keys(data.errors).length > 0) {
+                    body.innerHTML = `<p style='color:#e74c3c; text-align:center;'>Info: ${Object.values(data.errors)[0]}</p>`;
+                    return;
+                }
+                
                 if (tabName === 'stats') renderStats(data);
                 if (tabName === 'h2h') renderH2H(data);
                 if (tabName === 'standing') renderStanding(data);
 
             } catch (e) {
-                body.innerHTML = "<p style='color:red; text-align:center;'>Gagal memuat analisis.</p>";
+                body.innerHTML = "<p style='color:red; text-align:center;'>Gagal memuat data.</p>";
             }
         }
 
-        // RENDERER H2H
         function renderH2H(data) {
             const body = document.getElementById('modalBody');
             const fixtures = data.response || [];
             if (!fixtures.length) {
-                return body.innerHTML = "<p style='text-align:center; color:#e74c3c;'>Tidak ada riwayat pertemuan sebelumnya.</p>";
+                return body.innerHTML = "<p style='text-align:center; color:#7f8c8d; padding:20px;'>Belum ada riwayat pertemuan 5 laga terakhir.</p>";
             }
 
             let html = "<div style='margin-top:10px;'>";
@@ -308,7 +291,7 @@
                 <div class="h2h-row">
                     <span style="color:#7f8c8d; width:80px;">${date}</span>
                     <span style="flex:1; text-align:right;">${m.teams.home.name}</span>
-                    <span class="h2h-score" style="margin: 0 10px;">${m.goals.home} - ${m.goals.away}</span>
+                    <span class="h2h-score" style="margin: 0 10px;">${m.goals.home ?? '-'} - ${m.goals.away ?? '-'}</span>
                     <span style="flex:1; text-align:left;">${m.teams.away.name}</span>
                 </div>`;
             });
@@ -316,12 +299,12 @@
             body.innerHTML = html;
         }
 
-        // RENDERER KLASEMEN
         function renderStanding(data) {
             const body = document.getElementById('modalBody');
             const standings = data.response?.[0]?.league?.standings?.[0];
+            
             if (!standings || !standings.length) {
-                return body.innerHTML = "<p style='text-align:center; color:#e74c3c;'>Data klasemen tidak tersedia untuk kompetisi/musim ini.</p>";
+                return body.innerHTML = "<p style='text-align:center; color:#7f8c8d; padding:20px;'>Data klasemen tidak tersedia (biasanya karena ini turnamen Cup/Piala).</p>";
             }
 
             let html = `
@@ -352,13 +335,12 @@
             body.innerHTML = html;
         }
 
-        // RENDERER STATISTIK
         function renderStats(data) {
             const body = document.getElementById('modalBody');
             const responseData = data.response || [];
             
             if(!responseData.length || !responseData[0].statistics.length) { 
-                return body.innerHTML = "<p style='text-align:center; color:#e74c3c;'>Statistik pertandingan ini belum dirilis.</p>"; 
+                return body.innerHTML = "<p style='text-align:center; color:#7f8c8d; padding:20px;'>Statistik pertandingan belum dirilis atau laga belum dimulai.</p>"; 
             }
             
             const homeStats = responseData[0].statistics;
