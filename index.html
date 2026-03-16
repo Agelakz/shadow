@@ -1,227 +1,44 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FreshScore Pro - Live & Stats</title>
-    <style>
-        :root { --primary: #27ae60; --dark: #2c3e50; --bg: #f4f7f6; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--dark); }
-        
-        /* Layout */
-        .navbar { background: white; padding: 15px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .container { display: flex; max-width: 1200px; margin: 20px auto; gap: 20px; padding: 0 15px; }
-        
-        /* Sidebar */
-        .sidebar { width: 280px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: fit-content; position: sticky; top: 80px; }
-        .sidebar li { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; list-style: none; font-size: 0.9em; display: flex; align-items: center; gap: 10px; border-radius: 8px; }
-        .sidebar li:hover { background: #f9fbf9; color: var(--primary); }
+function renderMatches(matches) {
+    const container = document.getElementById('score-container');
+    if(!matches.length) { container.innerHTML = "<p style='text-align:center; padding:20px;'>Tidak ada jadwal.</p>"; return; }
+    
+    const grouped = matches.reduce((acc, m) => {
+        if(!acc[m.leagueName]) acc[m.leagueName] = [];
+        acc[m.leagueName].push(m);
+        return acc;
+    }, {});
 
-        /* Main Content */
-        .main-content { flex: 1; }
-        .league-group { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; }
-        .league-header { background: #e8f8f5; padding: 12px 20px; font-weight: 700; color: #16a085; display: flex; align-items: center; gap: 10px; }
-        
-        /* Match Row & Logos */
-        .match-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f4f4f4; cursor: pointer; transition: 0.2s; }
-        .match-row:hover { background: #fcfdfc; }
-        .match-time { min-width: 70px; font-size: 0.75em; font-weight: bold; color: #7f8c8d; }
-        .match-teams { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .team-line { display: flex; align-items: center; gap: 10px; }
-        .team-logo { width: 20px; height: 20px; object-fit: contain; }
-        .team-name { font-weight: 500; flex: 1; }
-        .team-score { font-weight: 800; width: 30px; text-align: right; }
-
-        /* Modal Popup */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
-        .stat-bar-container { margin: 15px 0; }
-        .stat-label { display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 5px; font-weight: bold; }
-        .stat-bar { background: #eee; height: 10px; border-radius: 5px; overflow: hidden; display: flex; }
-        .bar-home { background: var(--primary); height: 100%; }
-        .bar-away { background: #e74c3c; height: 100%; }
-
-        /* Table Standings */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em; }
-        th { text-align: left; padding: 10px; background: #f8f9fa; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
-        
-        .date-btn.active { background: var(--primary); color: white; border: none; }
-        .date-btn { padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; cursor: pointer; background: white; }
-    </style>
-</head>
-<body>
-
-    <div class="navbar">
-        <h1 onclick="location.reload()" style="cursor:pointer">FreshScore PRO</h1>
-        <div id="today-date"></div>
-    </div>
-
-    <div class="container">
-        <div class="sidebar">
-            <h3>Pilih Liga (Klasemen)</h3>
-            <ul id="league-list"><li>Memuat liga...</li></ul>
-        </div>
-
-        <div class="main-content">
-            <div id="date-selector" style="display:flex; gap:10px; margin-bottom:20px; overflow-x:auto; padding-bottom:5px;"></div>
-            <div id="view-container">
-                <div id="score-container">Memuat pertandingan...</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="statsModal" class="modal">
-        <div class="modal-content">
-            <h2 id="modalTitle" style="text-align:center; margin-bottom:20px; font-size: 1.2em;">Statistik Pertandingan</h2>
-            <div id="statsBody">Memuat statistik...</div>
-            <button onclick="closeModal()" style="width:100%; margin-top:20px; padding:10px; background:var(--dark); color:white; border:none; border-radius:5px; cursor:pointer;">Tutup</button>
-        </div>
-    </div>
-
-    <script>
-        let allMatches = [];
-        
-        // 1. Inisialisasi Kalender
-        function initCalendar() {
-            const container = document.getElementById('date-selector');
-            for(let i = -1; i < 5; i++) {
-                let d = new Date(); d.setDate(d.getDate() + i);
-                let iso = d.toISOString().split('T')[0];
-                let btn = document.createElement('button');
-                btn.className = `date-btn ${i===0?'active':''}`;
-                btn.innerText = i === 0 ? "HARI INI" : d.toLocaleDateString('id-ID', {day:'numeric', month:'short'});
-                btn.onclick = (e) => {
-                    document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-                    loadMatches(iso);
-                };
-                container.appendChild(btn);
-            }
-            loadMatches(new Date().toISOString().split('T')[0]);
-        }
-
-        // 2. Load Pertandingan
-        async function loadMatches(date) {
-            const container = document.getElementById('score-container');
-            container.innerHTML = "Memuat data...";
-            try {
-                const res = await fetch(`/api/match?date=${date}`);
-                const data = await res.json();
-                allMatches = data.matches;
-                renderMatches(data.matches);
-                renderSidebar(data.leagues);
-            } catch (e) { container.innerHTML = "Gagal memuat data."; }
-        }
-
-        function renderMatches(matches) {
-            const container = document.getElementById('score-container');
-            if(!matches.length) { container.innerHTML = "Tidak ada jadwal."; return; }
+    let html = "";
+    for(let league in grouped) {
+        html += `<div class="league-group"><div class="league-header">${league}</div>`;
+        grouped[league].forEach(m => {
+            // LOGIKA SKOR: Hanya sembunyikan jika status mengandung ":" (jam) atau "NS"
+            const isNotStarted = m.time.includes(':') || m.time === 'NS';
+            const displayH = isNotStarted ? '-' : m.scoreHome;
+            const displayA = isNotStarted ? '-' : m.scoreAway;
             
-            // Kelompokkan per Liga
-            const grouped = matches.reduce((acc, m) => {
-                if(!acc[m.leagueName]) acc[m.leagueName] = [];
-                acc[m.leagueName].push(m);
-                return acc;
-            }, {});
+            // Link Logo Alternatif yang lebih kuat
+            const logoH = `https://api.sofascore.app/api/v1/team/${m.homeId}/image`;
+            const logoA = `https://api.sofascore.app/api/v1/team/${m.awayId}/image`;
 
-            let html = "";
-            for(let league in grouped) {
-                html += `<div class="league-group"><div class="league-header">${league}</div>`;
-                grouped[league].forEach(m => {
-                    let scoreH = (m.time.includes(':') || m.time === 'NS') ? '-' : m.scoreHome;
-                    let scoreA = (m.time.includes(':') || m.time === 'NS') ? '-' : m.scoreAway;
-                    
-                    html += `
-                    <div class="match-row" onclick="showStats('${m.id}', '${m.home} vs ${m.away}')">
-                        <div class="match-time">${m.time.replace(' ','<br>')}</div>
-                        <div class="match-teams">
-                            <div class="team-line">
-                                <img class="team-logo" src="https://api.sofascore.app/api/v1/team/${m.homeId || 1}/image" onerror="this.src='https://www.sofascore.com/static/images/placeholders/team.png'">
-                                <span class="team-name">${m.home}</span>
-                                <span class="team-score">${scoreH}</span>
-                            </div>
-                            <div class="team-line">
-                                <img class="team-logo" src="https://api.sofascore.app/api/v1/team/${m.awayId || 2}/image" onerror="this.src='https://www.sofascore.com/static/images/placeholders/team.png'">
-                                <span class="team-name">${m.away}</span>
-                                <span class="team-score">${scoreA}</span>
-                            </div>
-                        </div>
-                    </div>`;
-                });
-                html += `</div>`;
-            }
-            container.innerHTML = html;
-        }
-
-        function renderSidebar(leagues) {
-            const list = document.getElementById('league-list');
-            list.innerHTML = leagues.map(l => `<li onclick="showStanding('${l.id}', '${l.name}')">🏆 ${l.name}</li>`).join('');
-        }
-
-        // 3. Fitur Statistik (Modal)
-        async function showStats(id, title) {
-            document.getElementById('statsModal').style.display = 'flex';
-            document.getElementById('modalTitle').innerText = title;
-            document.getElementById('statsBody').innerHTML = "Memuat statistik...";
-            
-            try {
-                const res = await fetch(`/api/extra?type=stats&id=${id}`);
-                const data = await res.json();
-                const stats = data.response?.statistics?.[0]?.groups || [];
-                
-                if(!stats.length) { document.getElementById('statsBody').innerHTML = "Statistik belum tersedia untuk laga ini."; return; }
-
-                let html = "";
-                stats.forEach(group => {
-                    group.statisticsItems.forEach(item => {
-                        let h = parseInt(item.homeValue);
-                        let a = parseInt(item.awayValue);
-                        let total = h + a;
-                        let hPerc = total === 0 ? 50 : (h/total)*100;
-                        html += `
-                        <div class="stat-bar-container">
-                            <div class="stat-label"><span>${item.homeValue}</span><span>${item.name}</span><span>${item.awayValue}</span></div>
-                            <div class="stat-bar">
-                                <div class="bar-home" style="width:${hPerc}%"></div>
-                                <div class="bar-away" style="width:${100-hPerc}%"></div>
-                            </div>
-                        </div>`;
-                    });
-                });
-                document.getElementById('statsBody').innerHTML = html;
-            } catch (e) { document.getElementById('statsBody').innerHTML = "Data statistik tidak ditemukan."; }
-        }
-
-        // 4. Fitur Klasemen
-        async function showStanding(leagueId, leagueName) {
-            const container = document.getElementById('score-container');
-            container.innerHTML = `<h3>Klasemen ${leagueName}</h3><p>Memuat tabel...</p>`;
-            
-            try {
-                const res = await fetch(`/api/extra?type=standing&id=${leagueId}`);
-                const data = await res.json();
-                const rows = data.response?.standings?.[0]?.rows || [];
-
-                let html = `<h2>Klasemen ${leagueName}</h2><table><tr><th>#</th><th>Tim</th><th>Main</th><th>Poin</th></tr>`;
-                rows.forEach(r => {
-                    html += `<tr>
-                        <td>${r.position}</td>
-                        <td style="display:flex; align-items:center; gap:10px;">
-                            <img src="https://api.sofascore.app/api/v1/team/${r.team.id}/image" style="width:20px"> ${r.team.name}
-                        </td>
-                        <td>${r.matches}</td>
-                        <td><b>${r.points}</b></td>
-                    </tr>`;
-                });
-                html += `</table><button onclick="location.reload()" style="margin-top:20px; padding:10px; border:none; background:var(--primary); color:white; border-radius:5px; cursor:pointer;">Kembali ke Jadwal</button>`;
-                container.innerHTML = html;
-            } catch (e) { container.innerHTML = "Klasemen tidak tersedia untuk liga ini."; }
-        }
-
-        function closeModal() { document.getElementById('statsModal').style.display = 'none'; }
-        initCalendar();
-    </script>
-</body>
-</html>
+            html += `
+            <div class="match-row" onclick="showStats('${m.id}', '${m.home} vs ${m.away}')">
+                <div class="match-time">${m.time}</div>
+                <div class="match-teams">
+                    <div class="team-line">
+                        <img class="team-logo" src="${logoH}" onerror="this.src='https://www.sofascore.com/static/images/placeholders/team.png'">
+                        <span class="team-name">${m.home}</span>
+                        <span class="team-score">${displayH}</span>
+                    </div>
+                    <div class="team-line">
+                        <img class="team-logo" src="${logoA}" onerror="this.src='https://www.sofascore.com/static/images/placeholders/team.png'">
+                        <span class="team-name">${m.away}</span>
+                        <span class="team-score">${displayA}</span>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+    container.innerHTML = html;
+}
