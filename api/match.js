@@ -22,52 +22,24 @@ export default async function handler(req, res) {
         const mappedMatches = matchesArray.map((match, index) => {
             let hScore = match.homeScore?.display ?? match.homeScore?.current ?? "-";
             let aScore = match.awayScore?.display ?? match.awayScore?.current ?? "-";
-
-            const leagueName = match.tournament?.name || match.league?.name || match.tournament?.category?.name || "Lain-lain";
-            const leagueId = match.tournament?.uniqueTournament?.id || match.tournament?.id || "ALL";
-
-            // LOGIKA MESIN WAKTU ANTI-GAGAL
-            let timeDisplay = "FT";
-            let isUnplayed = false;
-            
-            if (match.startTimestamp) {
-                const matchTimeMs = match.startTimestamp * 1000;
-                const nowMs = Date.now();
-                
-                // Jika waktu kick-off masih di masa depan, ATAU status API bilang belum mulai
-                if (matchTimeMs > nowMs || match.status?.type === 'notstarted' || match.status?.code === 0) {
-                    const dateObj = new Date(matchTimeMs);
-                    const hours = String(dateObj.getHours()).padStart(2, '0');
-                    const mins = String(dateObj.getMinutes()).padStart(2, '0');
-                    timeDisplay = `${hours}:${mins}`;
-                    isUnplayed = true;
-                    hScore = "-"; // Paksa skor jadi strip
-                    aScore = "-";
-                } 
-                // Jika sedang berlangsung
-                else if (match.status?.type === 'inprogress') {
-                    timeDisplay = "Live";
-                } 
-                // Jika sudah lewat
-                else {
-                    timeDisplay = match.status?.description === "Ended" ? "FT" : (match.status?.description || "FT");
-                }
-            }
+            const leagueName = match.tournament?.name || match.league?.name || "Lain-lain";
 
             return {
                 id: match.id || index.toString(),
-                home: match.homeTeam?.name || match.home?.name || "Tim Kandang",
-                away: match.awayTeam?.name || match.away?.name || "Tim Tandang",
+                home: match.homeTeam?.name || "Tim Kandang",
+                away: match.awayTeam?.name || "Tim Tandang",
                 homeId: match.homeTeam?.id,
                 awayId: match.awayTeam?.id,
                 scoreHome: hScore,
                 scoreAway: aScore,
-                time: timeDisplay,
-                leagueName: leagueName
+                // Kita kirim data mentah agar Frontend yang merakit jamnya dengan akurat!
+                timestamp: match.startTimestamp || 0, 
+                statusCode: match.status?.code || 0,
+                statusDesc: match.status?.description || match.status?.type || "FT",
+                leagueName: leagueName.toLowerCase() // huruf kecil agar mudah difilter
             };
         });
 
-        // Backend hanya mengirimkan data, Frontend yang mengatur menu
         res.status(200).json({ matches: mappedMatches });
     } catch (error) {
         res.status(500).json({ error: error.message });
