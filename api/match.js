@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
-    // Trik Caching agar terhindar dari Banned API
-// Cache 30 menit (1800 detik)
-res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
+    // Cache 30 Menit yang Anda minta sebelumnya
+    res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
+
     try {
         let queryDate = req.query.date || new Date().toISOString().split('T')[0];
         
@@ -9,8 +9,8 @@ res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
         const options = {
             method: 'GET',
             headers: { 
-                // 👇 GANTI DENGAN API KEY ANDA YANG BARU (AKUN BARU) 👇
-                'x-apisports-key': '33f3623d8634822bda56a37df178802d' 
+                // 👇 JANGAN LUPA MASUKKAN API KEY ANDA DI SINI 👇
+                'x-apisports-key': 'MASUKKAN_API_KEY_ANDA_DI_SINI' 
             }
         };
 
@@ -39,7 +39,10 @@ res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
                 timestamp: match.fixture.timestamp,
                 statusCode: match.fixture.status.short,
                 statusDesc: match.fixture.status.long,
-                leagueName: match.league.name.toLowerCase()
+                leagueName: match.league.name.toLowerCase(),
+                // 👇 DUA BARIS BARU UNTUK NEGARA & BENDERA 👇
+                leagueCountry: match.league.country, 
+                leagueFlag: match.league.flag
             };
         });
 
