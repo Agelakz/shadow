@@ -1,11 +1,15 @@
 export default async function handler(req, res) {
+    // SIHIR CACHING VERCEL: Simpan data ini di memori Edge selama 60 detik!
+    // Dalam 60 detik ke depan, berapapun orang yang buka halaman ini, API tidak akan tersentuh.
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+
     try {
         let queryDate = req.query.date || new Date().toISOString().split('T')[0];
         
         const url = `https://v3.football.api-sports.io/fixtures?date=${queryDate}`;
         const options = {
             method: 'GET',
-            headers: { 'x-apisports-key': '20178b9693c87fccba1b1cbd4cc44830' }
+            headers: { 'x-apisports-key': 'API_KEY_BARU_ANDA' } // MASUKKAN API KEY BARU DI SINI
         };
 
         const response = await fetch(url, options);
@@ -24,12 +28,10 @@ export default async function handler(req, res) {
                 away: match.teams.away.name,
                 homeLogo: match.teams.home.logo,
                 awayLogo: match.teams.away.logo,
-                // INI YANG MEMBUAT H2H & KLASEMEN BEKERJA:
                 homeId: match.teams.home.id,
                 awayId: match.teams.away.id,
                 leagueId: match.league.id,
                 season: match.league.season,
-                
                 scoreHome: match.goals.home !== null ? match.goals.home : "-",
                 scoreAway: match.goals.away !== null ? match.goals.away : "-",
                 timestamp: match.fixture.timestamp,
