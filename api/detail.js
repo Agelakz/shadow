@@ -1,6 +1,9 @@
 export default async function handler(req, res) {
+    // SIHIR CACHING VERCEL: Simpan data analisis selama 5 MENIT (300 detik)
+    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+
     const { type, id, h2h, league, season } = req.query;
-    const apiKey = '20178b9693c87fccba1b1cbd4cc44830';
+    const apiKey = 'API_KEY_BARU_ANDA'; // MASUKKAN API KEY BARU DI SINI JUGA
     let url = "";
 
     if (type === 'stats') {
@@ -10,7 +13,6 @@ export default async function handler(req, res) {
     } else if (type === 'standing') {
         url = `https://v3.football.api-sports.io/standings?league=${league}&season=${season}`;
     } else if (type === 'odds') {
-        // JALUR BARU UNTUK BURSA TARUHAN
         url = `https://v3.football.api-sports.io/odds?fixture=${id}`;
     } else {
         return res.status(400).json({ error: "Tipe analisis tidak valid" });
