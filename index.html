@@ -3,60 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Papan Skor Pertandingan</title>
+    <title>FreshScore - Live Pertandingan</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #fff; text-align: center; padding: 20px; }
-        .board { display: flex; flex-direction: column; gap: 15px; max-width: 500px; margin: 0 auto; margin-top: 30px; }
-        .match { background: #1e1e1e; padding: 15px 25px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #00e676; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .team { font-size: 1.1em; font-weight: 600; width: 35%; }
-        .score { font-size: 1.6em; font-weight: bold; color: #00e676; }
-        .status { font-size: 0.85em; color: #888; margin-top: 5px; }
-        .center-info { display: flex; flex-direction: column; align-items: center; }
-        #loading { color: #00e676; font-style: italic; }
+        /* --- Reset & Gaya Dasar --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f4f7f6; /* Abu-abu kehijauan yang sangat lembut (Fresh) */
+            color: #2c3e50; 
+        }
+        
+        /* --- Bagian Atas (Header/Navbar) --- */
+        .navbar { 
+            background-color: #ffffff; 
+            padding: 15px 30px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .navbar h1 { color: #27ae60; font-size: 1.5em; font-weight: 800; letter-spacing: -0.5px;}
+        .navbar .date { font-weight: 600; color: #7f8c8d; }
+        
+        /* --- Pembungkus Layout Utama --- */
+        .container { 
+            display: flex; 
+            max-width: 1100px; 
+            margin: 20px auto; 
+            gap: 25px; 
+            padding: 0 20px; 
+        }
+        
+        /* --- Sidebar Kiri (Daftar Liga) --- */
+        .sidebar { 
+            width: 260px; 
+            background: #ffffff; 
+            border-radius: 12px; 
+            padding: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            height: fit-content; 
+        }
+        .sidebar h3 { font-size: 0.9em; color: #95a5a6; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar ul { list-style: none; }
+        .sidebar li { padding: 12px 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; font-weight: 500; transition: all 0.2s ease; }
+        .sidebar li:hover { color: #27ae60; padding-left: 15px; background-color: #f9fbf9; border-radius: 6px; border-bottom: transparent;}
+
+        /* --- Konten Utama (Kanan) --- */
+        .main-content { flex: 1; }
+        
+        /* Tab Filter (Semua, Live, Selesai) */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { 
+            padding: 8px 18px; 
+            background: #ffffff; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            border: 1px solid #e0e0e0; 
+            transition: 0.3s; 
+        }
+        .tab.active { background: #27ae60; color: white; border-color: #27ae60; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2);}
+        
+        /* --- Desain Kartu Pertandingan --- */
+        .league-group { 
+            background: #ffffff; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            margin-bottom: 25px; 
+        }
+        .league-header { 
+            background: #e8f8f5; /* Hijau mint yang sangat pudar */
+            padding: 12px 20px; 
+            font-weight: 700; 
+            color: #16a085; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-size: 0.9em;
+        }
+        
+        /* Baris per Pertandingan */
+        .match-row { 
+            display: flex; 
+            align-items: center; 
+            padding: 15px 20px; 
+            border-bottom: 1px solid #f4f4f4; 
+            transition: background 0.2s; 
+        }
+        .match-row:hover { background: #fafcfa; }
+        .match-row:last-child { border-bottom: none; }
+        
+        .match-time { width: 60px; font-size: 0.9em; color: #e74c3c; font-weight: 700; } /* Merah/Oranye untuk menit live */
+        .match-teams { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .team-line { display: flex; justify-content: space-between; align-items: center; }
+        .team-name { font-weight: 500; font-size: 0.95em;}
+        .team-score { font-weight: 700; font-size: 1.1em; width: 40px; text-align: right; color: #2c3e50;}
+        
     </style>
 </head>
 <body>
 
-    <h1>Live Score Liga ⚽</h1>
-    <div id="loading">Menghubungkan ke server...</div>
-    <div id="match-board" class="board"></div>
+    <div class="navbar">
+        <h1>FreshScore</h1>
+        <div class="date">Senin, 16 Maret</div>
+    </div>
 
-    <script>
-        async function loadMatches() {
-            try {
-                // Memanggil file backend kita sendiri di Vercel
-                const response = await fetch('/api/match');
+    <div class="container">
+        
+        <div class="sidebar">
+            <h3>Papan Atas</h3>
+            <ul>
+                <li>🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</li>
+                <li>🇫🇷 Ligue 1</li>
+                <li>🇪🇸 La Liga</li>
+                <li>🎾 ATP Masters</li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            
+            <div class="tabs">
+                <div class="tab active">SEMUA</div>
+                <div class="tab">LIVE</div>
+                <div class="tab">SELESAI</div>
+            </div>
+
+            <div class="league-group">
+                <div class="league-header">
+                    🏴󠁧󠁢󠁥󠁮󠁧󠁿 INGGRIS: Premier League
+                </div>
                 
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const data = await response.json();
-                
-                document.getElementById('loading').style.display = 'none';
-                const board = document.getElementById('match-board');
-                
-                data.forEach(match => {
-                    const matchCard = `
-                        <div class="match">
-                            <div class="team" style="text-align: right;">${match.homeTeam}</div>
-                            <div class="center-info">
-                                <div class="score">${match.score}</div>
-                                <div class="status">${match.status}</div>
-                            </div>
-                            <div class="team" style="text-align: left;">${match.awayTeam}</div>
+                <div class="match-row">
+                    <div class="match-time">75'</div>
+                    <div class="match-teams">
+                        <div class="team-line">
+                            <span class="team-name">Liverpool</span>
+                            <span class="team-score">2</span>
                         </div>
-                    `;
-                    board.innerHTML += matchCard;
-                });
+                        <div class="team-line">
+                            <span class="team-name">Tottenham</span>
+                            <span class="team-score">1</span>
+                        </div>
+                    </div>
+                </div>
 
-            } catch (error) {
-                document.getElementById('loading').innerText = "Gagal memuat pertandingan.";
-                document.getElementById('loading').style.color = "red";
-                console.error("Error fetching matches:", error);
-            }
-        }
+                <div class="match-row">
+                    <div class="match-time" style="color: #95a5a6;">FT</div>
+                    <div class="match-teams">
+                        <div class="team-line">
+                            <span class="team-name" style="color: #95a5a6;">Arsenal</span>
+                            <span class="team-score" style="color: #95a5a6;">0</span>
+                        </div>
+                        <div class="team-line">
+                            <span class="team-name">Chelsea</span>
+                            <span class="team-score">1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        // Jalankan saat web dibuka
-        loadMatches();
-    </script>
+            <div class="league-group">
+                <div class="league-header">
+                    🎾 ATP: Indian Wells
+                </div>
+                
+                <div class="match-row">
+                    <div class="match-time">Set 2</div>
+                    <div class="match-teams">
+                        <div class="team-line">
+                            <span class="team-name">C. Alcaraz</span>
+                            <span class="team-score">6 &nbsp; 4</span>
+                        </div>
+                        <div class="team-line">
+                            <span class="team-name">J. Sinner</span>
+                            <span class="team-score">3 &nbsp; 2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </body>
 </html>
