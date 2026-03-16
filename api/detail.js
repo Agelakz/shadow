@@ -2,15 +2,14 @@ export default async function handler(req, res) {
     const eventId = req.query.id;
     if (!eventId) return res.status(400).json({ error: "ID Pertandingan diperlukan" });
 
-    // Menggunakan endpoint harta karun Anda!
-    const url = `https://free-api-live-football-data.p.rapidapi.com/football-get-match-all-stats?eventid=${eventId}`;
+    // Endpoint statistik dari API-Football
+    const url = `https://v3.football.api-sports.io/fixtures/statistics?fixture=${eventId}`;
     
     try {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'x-rapidapi-host': 'free-api-live-football-data.p.rapidapi.com',
-                'x-rapidapi-key': 'aa90a97566msh0596dc8fd7c0d9ep13f42bjsna912b1c6ca9d'
+                'x-apisports-key': '20178b9693c87fccba1b1cbd4cc44830'
             }
         });
         const data = await response.json();
